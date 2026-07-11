@@ -14,6 +14,7 @@ import { z } from "zod";
 const searchSchema = z.object({ redirect: z.string().optional() });
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
