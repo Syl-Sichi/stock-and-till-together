@@ -269,9 +269,10 @@ function ProductDialog({ product, onDone }: { product: Product | null; onDone: (
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Load preview for existing image
-  useState(() => {
-    if (imagePath) getProductImageUrl(imagePath).then(setPreviewUrl);
-  });
+  useEffect(() => {
+    if (imagePath && !imagePath.startsWith("blob:")) getProductImageUrl(imagePath).then(setPreviewUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
