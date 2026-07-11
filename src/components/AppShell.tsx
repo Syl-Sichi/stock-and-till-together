@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentRole } from "@/hooks/useCurrentRole";
+import { InstallPWA } from "@/components/InstallPWA";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -108,6 +109,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </button>
           <div className="font-display font-semibold text-base capitalize">
             {nav.find((n) => location.pathname.startsWith(n.to))?.label ?? "My Spot"}
+          </div>
+          <div className="ml-auto">
+            <InstallPWA />
           </div>
         </header>
         <main className="flex-1 p-4 lg:p-8 max-w-[1600px] w-full mx-auto">{children}</main>
