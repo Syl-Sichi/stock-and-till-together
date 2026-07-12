@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useCurrentRole } from "@/hooks/useCurrentRole";
+import { EnableNotifications } from "@/components/EnableNotifications";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -56,7 +57,7 @@ function SettingsPage() {
   });
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl space-y-6">
       <Card className="p-6 space-y-4">
         <div>
           <h3 className="font-display text-xl font-bold">Store settings</h3>
@@ -108,6 +109,16 @@ function SettingsPage() {
             </Button>
           </div>
         )}
+      </Card>
+      <Card className="p-6 space-y-4">
+        <div>
+          <h3 className="font-display text-xl font-bold">Notifications</h3>
+          <p className="text-sm text-muted-foreground">
+            Get alerts when items dip below your minimum stock and when the daily 9 PM report is ready.
+            Works after publishing the app; on iPhone, install to Home Screen first.
+          </p>
+        </div>
+        <EnableNotifications />
       </Card>
     </div>
   );
