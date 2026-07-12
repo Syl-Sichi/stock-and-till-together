@@ -1,63 +1,54 @@
-# My Spot — Build Plan (v1)
 
-A clean, Shopify-style POS & inventory app in Naira, installable as a PWA, with an AI inventory assistant.
+## What you'll get
 
-## Foundation
-- Enable **Lovable Cloud** (Postgres + Auth + Storage).
-- Design system: white/gray surfaces, `#16a34a` primary green, dark ink `#111827`; Inter + a slightly heavier display face for headings; rounded cards, subtle shadows.
-- Semantic tokens in `src/styles.css`; shadcn variants only — no hardcoded colors in components.
-- Manifest-only PWA: `manifest.webmanifest`, icons, theme color, `apple-touch-icon`. No service worker in v1.
+1. **Full offline mode** — sales, inventory, suppliers, and settings all editable without internet. Changes queue locally and sync when the connection returns.
+2. **Conflict prompt** — when your offline edit and a newer server value disagree, a review dialog lists each conflict so you pick the winner (yours / server / merge fields).
+3. **Web Push notifications** — real background push (works with the app closed) for:
+   - Low-stock alerts (fires the moment quantity crosses your threshold)
+   - Daily report ready at 9:00 PM Africa/Lagos
+4. **Install & subscribe** — a "Enable notifications" button in Settings that registers the service worker and stores your push subscription.
 
-## Data model (Supabase)
-- `profiles` (id → auth.users, full_name)
-- `user_roles` (user_id, role: owner|manager|cashier) + `has_role()` SECURITY DEFINER
-- `categories`, `suppliers`
-- `products` (name, sku, barcode, category_id, supplier_id, image_url, cost_price, selling_price, quantity, min_stock, expiry_date, archived)
-- `sales` (id, cashier_id, subtotal, discount, tax, total, payment_method, cash_received, created_at)
-- `sale_items` (sale_id, product_id, name_snapshot, qty, unit_price, cost_snapshot, line_total)
-- `restocks` (product_id, supplier_id, qty, unit_cost, created_by, created_at)
-- `settings` (singleton: store_name, currency, tax_rate, low_stock_threshold, receipt_footer)
-- RLS: authenticated users read; only manager/owner write products/suppliers; only owner deletes; cashiers can insert sales. Triggers decrement `products.quantity` on `sale_items` insert and increment on `restocks` insert.
-- Full GRANTs per public-schema rules.
+## How it works (technical)
 
-## Routes
-```
-/auth                     login / signup
-/_authenticated/
-  index                   Dashboard
-  pos                     Point of Sale
-  inventory               Product list + add/edit/archive
-  inventory/$id           Product detail
-  restock                 Add stock
-  sales                   Sales history + receipt view
-  reports                 Daily / weekly / monthly + export CSV
-  suppliers               Suppliers CRUD
-  assistant               AI chat
-  settings                Store settings + role management (owner)
-```
+### Offline layer
+- Add a service worker via `vite-plugin-pwa` (`generateSW`, `NetworkFirst` for HTML, `CacheFirst` for hashed assets, guarded so it never registers in Lovable preview).
+- IndexedDB store (`idb`) holds:
+  - **Snapshots**: last-known `products`, `suppliers`, `settings`, recent `sales` rows (refreshed on every online read).
+  - **Mutation queue**: every create/update/delete performed offline, tagged with `entity`, `op`, `local_updated_at`, `payload`, and the base `updated_at` we read from.
+- A thin `offlineRepo` wraps reads/writes. Online: writes go straight to Supabase then update the snapshot. Offline: writes hit the snapshot + queue. UI reads always come from the snapshot, so screens stay live.
+- POS sales get a local `client_ref` UUID; when synced they upsert by `client_ref` so replays are idempotent.
 
-## Features in v1
-- **Auth & roles**: email/password + Google. Role gates for delete/settings.
-- **Inventory**: CRUD, image upload to Storage, search/filter/sort, low-stock badge, CSV import/export.
-- **Barcode**: manual entry + phone camera scan (`@zxing/browser`); USB scanners work as keyboard input automatically.
-- **POS**: cart, quantity, discount %, tax from settings, cash/transfer/card/split, prints A5/thermal-friendly receipt with `window.print()`. Auto-decrements stock via DB trigger.
-- **Dashboard**: today's revenue, profit (from cost snapshot), tx count, items sold, inventory value, low/out-of-stock, top sellers, 7-day and 30-day revenue charts (Recharts).
-- **Reports**: daily/weekly/monthly tables + charts + CSV export.
-- **AI Assistant**: streaming chat (TanStack `/api/chat` server route + AI SDK + Lovable AI Gateway, `openai/gpt-5.5`). Tools:
-  - `get_inventory_summary`, `find_product(query)`, `low_stock`, `top_sellers(period)`, `slow_movers(period)`, `sales_summary(period)`, `reorder_suggestions`.
-  Tools query Supabase server-side with `requireSupabaseAuth`.
-- **Notifications**: in-app bell showing low-stock / expiring-soon items (client query, no push in v1).
+### Sync + conflict prompt
+- A `SyncManager` runs on `online` event, on app start, and every 60 s.
+- For each queued mutation it re-reads the current server row, compares `updated_at` against the base version:
+  - No server change → apply.
+  - Server changed but fields don't overlap → auto-merge.
+  - Overlapping fields → push into a **conflicts** list.
+- A toast + banner surfaces "N conflicts to resolve" and opens a dialog listing entity, field, your value, server value, and Keep mine / Keep server / Merge (field-level) buttons.
 
-## Branding & SEO
-- Real `head()` per route (title, description, og).
-- `sitemap.xml`, `robots.txt`, `llms.txt` for public `/auth` only.
+### Push notifications
+- Generate VAPID keys, store the public key in a client env var and the private key as a secret.
+- New table `push_subscriptions (user_id, endpoint, p256dh, auth, created_at)` with RLS (owner-only).
+- New table `notification_log` to dedupe (so we don't re-alert for the same low-stock item twice a day).
+- Service worker handles `push` events → shows notification, click deep-links into the app.
+- Server function `sendPushToUser` uses the `web-push` library.
+- **Low-stock trigger**: Postgres trigger on `products` fires when `quantity` crosses `<= min_stock`, calls a `/api/public/hooks/low-stock` route (via `pg_net`) which fans out push messages.
+- **Daily report**: `pg_cron` job at 21:00 Africa/Lagos calls `/api/public/hooks/daily-report`, which generates the summary and pushes to every subscriber.
 
-## Out of scope (future)
-Offline sync, push notifications, multi-branch, loyalty, payroll, WhatsApp/SMS, voice AI, camera product recognition, payment gateway integration.
+### Files added / changed
+- `vite.config.ts` — add `vite-plugin-pwa`
+- `src/lib/offline/db.ts`, `queue.ts`, `sync.ts`, `repo.ts`
+- `src/lib/offline/conflicts.ts` + `src/components/ConflictDialog.tsx`
+- `src/lib/push/subscribe.ts`, `src/lib/push/send.functions.ts`
+- `src/routes/api/public/hooks/low-stock.ts`, `daily-report.ts`
+- `src/components/OfflineBadge.tsx`, `src/components/EnableNotifications.tsx`
+- `public/sw.js` registration wrapper (guarded)
+- Migrations: `push_subscriptions`, `notification_log`, low-stock trigger, cron schedule
+- Wire `pos.tsx`, `inventory.tsx`, `suppliers.tsx`, `settings.tsx` to `offlineRepo`
 
----
+### Caveats
+- Offline works only in the **published** app (service workers don't run in Lovable preview by design). You'll see the offline badge/queue there.
+- iOS requires the app to be installed to Home Screen before it can receive web push.
+- You'll need to click "Enable notifications" once per device to subscribe.
 
-## Deliverable in this pass
-I'll ship the foundation end-to-end: Cloud enabled, schema + RLS + triggers, design system, auth, dashboard, inventory (CRUD + barcode scan), POS (checkout + receipt), sales history, reports (daily + CSV), AI assistant, settings, PWA manifest, sitemap/robots. Some polish (bulk import UI, advanced filters, weekly/monthly report exports) may land as follow-ups if the turn budget runs long — I'll flag anything deferred.
-
-Approve and I'll start building.
+Reply "go" to build it, or tell me what to change.

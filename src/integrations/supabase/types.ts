@@ -32,12 +32,34 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_log: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          ref: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          ref: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          ref?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           archived: boolean
           barcode: string | null
           brand: string | null
           category_id: string | null
+          client_ref: string | null
           cost_price: number
           created_at: string
           expiry_date: string | null
@@ -56,6 +78,7 @@ export type Database = {
           barcode?: string | null
           brand?: string | null
           category_id?: string | null
+          client_ref?: string | null
           cost_price?: number
           created_at?: string
           expiry_date?: string | null
@@ -74,6 +97,7 @@ export type Database = {
           barcode?: string | null
           brand?: string | null
           category_id?: string | null
+          client_ref?: string | null
           cost_price?: number
           created_at?: string
           expiry_date?: string | null
@@ -119,6 +143,36 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -222,6 +276,7 @@ export type Database = {
         Row: {
           cash_received: number | null
           cashier_id: string | null
+          client_ref: string | null
           created_at: string
           discount: number
           id: string
@@ -234,6 +289,7 @@ export type Database = {
         Insert: {
           cash_received?: number | null
           cashier_id?: string | null
+          client_ref?: string | null
           created_at?: string
           discount?: number
           id?: string
@@ -246,6 +302,7 @@ export type Database = {
         Update: {
           cash_received?: number | null
           cashier_id?: string | null
+          client_ref?: string | null
           created_at?: string
           discount?: number
           id?: string
@@ -289,28 +346,34 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          client_ref: string | null
           created_at: string
           email: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
+          updated_at: string
         }
         Insert: {
+          client_ref?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          updated_at?: string
         }
         Update: {
+          client_ref?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
