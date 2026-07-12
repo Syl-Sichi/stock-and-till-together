@@ -17,6 +17,9 @@ import { formatNaira } from "@/lib/format";
 import { Minus, Plus, Search, Trash2, ScanBarcode } from "lucide-react";
 import { toast } from "sonner";
 import { useSettings } from "@/hooks/useSettings";
+import { enqueue, getSnapshot, putSnapshot } from "@/lib/offline/db";
+import { emitChange, isOnline } from "@/lib/offline/network";
+import { runSync } from "@/lib/offline/sync";
 
 export const Route = createFileRoute("/_authenticated/pos")({
   component: POS,
@@ -100,43 +103,64 @@ function POS() {
     mutationFn: async () => {
       if (cart.length === 0) throw new Error("Cart is empty");
       const { data: userData } = await supabase.auth.getUser();
-      const uid = userData.user?.id;
-      const { data: sale, error } = await supabase
-        .from("sales")
-        .insert({
-          cashier_id: uid,
-          subtotal,
-          discount,
-          tax,
-          total,
-          payment_method: payment,
-          cash_received: payment === "cash" && typeof cashReceived === "number" ? cashReceived : null,
-        })
-        .select("*")
-        .single();
-      if (error) throw error;
+      const uid = userData.user?.id ?? null;
+      const client_ref = crypto.randomUUID();
       const items = cart.map((l) => ({
-        sale_id: sale.id,
         product_id: l.product.id,
         name_snapshot: l.product.name,
         qty: l.qty,
-        unit_price: l.product.selling_price,
-        cost_snapshot: l.product.cost_price,
+        unit_price: Number(l.product.selling_price),
+        cost_snapshot: Number(l.product.cost_price),
         line_total: Number(l.product.selling_price) * l.qty,
       }));
-      const { error: e2 } = await supabase.from("sale_items").insert(items);
-      if (e2) throw e2;
-      return sale;
+      const salePayload = {
+        client_ref,
+        cashier_id: uid,
+        subtotal, discount, tax, total,
+        payment_method: payment,
+        cash_received: payment === "cash" && typeof cashReceived === "number" ? cashReceived : null,
+      };
+
+      // Optimistically decrement local product snapshots so UI stays correct offline
+      for (const it of items) {
+        const cur = await getSnapshot<{ id: string; quantity: number }>("products", it.product_id);
+        if (cur) await putSnapshot("products", { ...cur, quantity: Math.max(0, Number(cur.quantity) - it.qty) });
+      }
+
+      if (isOnline()) {
+        try {
+          const { data: sale, error } = await supabase.from("sales")
+            .upsert({ ...salePayload }, { onConflict: "client_ref" })
+            .select("*").single();
+          if (error) throw error;
+          const { error: e2 } = await supabase.from("sale_items")
+            .insert(items.map((it) => ({ ...it, sale_id: sale.id })));
+          if (e2) throw e2;
+          return { id: sale.id, offline: false };
+        } catch (e) {
+          console.warn("[POS] online checkout failed, queueing", e);
+        }
+      }
+      // Offline path: queue as a single atomic offline_sale
+      await enqueue({
+        entity: "offline_sale",
+        op: "sale",
+        client_ref,
+        payload: { ...salePayload, items } as unknown as Record<string, unknown>,
+      });
+      emitChange("queue");
+      return { id: client_ref, offline: true };
     },
-    onSuccess: (sale) => {
-      toast.success("Sale completed");
+    onSuccess: (res) => {
+      toast.success(res.offline ? "Sale saved offline — will sync automatically" : "Sale completed");
       qc.invalidateQueries({ queryKey: ["pos-products"] });
       qc.invalidateQueries({ queryKey: ["dash"] });
       qc.invalidateQueries({ queryKey: ["sales"] });
-      printReceipt(sale.id);
+      printReceipt(res.id);
       setCart([]);
       setCashReceived("");
       setDiscountPct(0);
+      if (!res.offline) void runSync();
     },
     onError: (e: Error) => toast.error(e.message),
   });

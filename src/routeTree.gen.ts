@@ -23,6 +23,8 @@ import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/po
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
+import { Route as ApiPublicHooksLowStockRouteImport } from './routes/api/public/hooks/low-stock'
+import { Route as ApiPublicHooksDailyReportRouteImport } from './routes/api/public/hooks/daily-report'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -93,6 +95,17 @@ const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
   path: '/assistant',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksLowStockRoute = ApiPublicHooksLowStockRouteImport.update({
+  id: '/api/public/hooks/low-stock',
+  path: '/api/public/hooks/low-stock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksDailyReportRoute =
+  ApiPublicHooksDailyReportRouteImport.update({
+    id: '/api/public/hooks/daily-report',
+    path: '/api/public/hooks/daily-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +121,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/hooks/daily-report': typeof ApiPublicHooksDailyReportRoute
+  '/api/public/hooks/low-stock': typeof ApiPublicHooksLowStockRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -123,6 +138,8 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/hooks/daily-report': typeof ApiPublicHooksDailyReportRoute
+  '/api/public/hooks/low-stock': typeof ApiPublicHooksLowStockRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,6 +157,8 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/public/hooks/daily-report': typeof ApiPublicHooksDailyReportRoute
+  '/api/public/hooks/low-stock': typeof ApiPublicHooksLowStockRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -157,6 +176,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/api/chat'
+    | '/api/public/hooks/daily-report'
+    | '/api/public/hooks/low-stock'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -172,6 +193,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/suppliers'
     | '/api/chat'
+    | '/api/public/hooks/daily-report'
+    | '/api/public/hooks/low-stock'
   id:
     | '__root__'
     | '/'
@@ -188,6 +211,8 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/suppliers'
     | '/api/chat'
+    | '/api/public/hooks/daily-report'
+    | '/api/public/hooks/low-stock'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -196,6 +221,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPublicHooksDailyReportRoute: typeof ApiPublicHooksDailyReportRoute
+  ApiPublicHooksLowStockRoute: typeof ApiPublicHooksLowStockRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -298,6 +325,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssistantRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/low-stock': {
+      id: '/api/public/hooks/low-stock'
+      path: '/api/public/hooks/low-stock'
+      fullPath: '/api/public/hooks/low-stock'
+      preLoaderRoute: typeof ApiPublicHooksLowStockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/daily-report': {
+      id: '/api/public/hooks/daily-report'
+      path: '/api/public/hooks/daily-report'
+      fullPath: '/api/public/hooks/daily-report'
+      preLoaderRoute: typeof ApiPublicHooksDailyReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -334,17 +375,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPublicHooksDailyReportRoute: ApiPublicHooksDailyReportRoute,
+  ApiPublicHooksLowStockRoute: ApiPublicHooksLowStockRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
