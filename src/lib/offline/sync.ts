@@ -48,24 +48,53 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
     const queue = await listQueue();
     for (const m of queue) {
       try {
+        if (m.op === "sale" && m.entity === "offline_sale") {
+          const p = m.payload as unknown as {
+            client_ref: string; subtotal: number; discount: number; tax: number; total: number;
+            payment_method: string; cash_received: number | null; cashier_id: string | null;
+            items: Array<Record<string, unknown>>;
+          };
+          const { data: sale, error } = await sb.from("sales").upsert(
+            {
+              client_ref: p.client_ref,
+              cashier_id: p.cashier_id, subtotal: p.subtotal, discount: p.discount,
+              tax: p.tax, total: p.total, payment_method: p.payment_method,
+              cash_received: p.cash_received,
+            },
+            { onConflict: "client_ref" },
+          ).select().maybeSingle();
+          if (error) throw error;
+          if (sale) {
+            // Only insert items if this sale didn't already have them (fresh insert)
+            const { count } = await sb.from("sale_items").select("id", { count: "exact", head: true }).eq("sale_id", sale.id);
+            if (!count) {
+              const items = p.items.map((it) => ({ ...it, sale_id: sale.id }));
+              await sb.from("sale_items").insert(items);
+            }
+          }
+          await dequeue(m.id); applied++;
+          continue;
+        }
+
+        const entity = m.entity as EntityName;
         if (m.op === "insert") {
           const payload = { ...m.payload };
           if (m.client_ref) (payload as Record<string, unknown>).client_ref = m.client_ref;
-          const { data, error } = await sb.from(m.entity).upsert(
+          const { data, error } = await sb.from(entity).upsert(
             payload,
             m.client_ref ? { onConflict: "client_ref" } : undefined,
           ).select().maybeSingle();
           if (error) throw error;
-          if (data) await putSnapshot(m.entity, data as { id: string });
+          if (data) await putSnapshot(entity, data as { id: string });
           await dequeue(m.id); applied++;
         } else if (m.op === "delete" && m.target_id) {
-          const { error } = await sb.from(m.entity).delete().eq("id", m.target_id);
+          const { error } = await sb.from(entity).delete().eq("id", m.target_id);
           if (error) throw error;
-          await deleteSnapshot(m.entity, m.target_id);
+          await deleteSnapshot(entity, m.target_id);
           await dequeue(m.id); applied++;
         } else if (m.op === "update" && m.target_id) {
-          const { data: server, error: sErr } = await supabase
-            .from(m.entity).select("*").eq("id", m.target_id).maybeSingle();
+          const { data: server, error: sErr } = await sb
+            .from(entity).select("*").eq("id", m.target_id).maybeSingle();
           if (sErr) throw sErr;
           if (!server) { await dequeue(m.id); continue; }
 
@@ -73,7 +102,7 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
           const serverUpdated = (server as Record<string, unknown>).updated_at as string | null;
           const changed = baseUpdated && serverUpdated && baseUpdated !== serverUpdated;
 
-          const editable = EDITABLE_FIELDS[m.entity];
+          const editable = EDITABLE_FIELDS[entity];
           const localChanges = Object.fromEntries(
             Object.entries(m.payload).filter(([k]) => editable.includes(k)),
           );
@@ -86,7 +115,7 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
 
           if (overlapping.length > 0) {
             await addConflict({
-              entity: m.entity,
+              entity,
               target_id: m.target_id,
               local: localChanges,
               server: server as Record<string, unknown>,
@@ -96,11 +125,10 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
             conflicts++;
             continue;
           }
-          // No overlap -> safe to apply (merge)
-          const { data, error } = await sb.from(m.entity)
+          const { data, error } = await sb.from(entity)
             .update(localChanges).eq("id", m.target_id).select().maybeSingle();
           if (error) throw error;
-          if (data) await putSnapshot(m.entity, data as { id: string });
+          if (data) await putSnapshot(entity, data as { id: string });
           await dequeue(m.id); applied++;
         }
       } catch (err) {
