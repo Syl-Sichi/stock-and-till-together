@@ -21,6 +21,9 @@ import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { InstallPWA } from "@/components/InstallPWA";
+import { OfflineBadge } from "@/components/OfflineBadge";
+import { ConflictBanner } from "@/components/ConflictDialog";
+import { startSyncLoop } from "@/lib/offline/sync";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -42,6 +45,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => { startSyncLoop(); }, []);
 
   async function signOut() {
     await qc.cancelQueries();
@@ -110,7 +114,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <div className="font-display font-semibold text-base capitalize">
             {nav.find((n) => location.pathname.startsWith(n.to))?.label ?? "My Spot"}
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <ConflictBanner />
+            <OfflineBadge />
             <InstallPWA />
           </div>
         </header>
