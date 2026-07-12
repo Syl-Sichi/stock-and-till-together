@@ -7,13 +7,32 @@ import { openDB, type IDBPDatabase } from "idb";
 
 export type EntityName = "products" | "suppliers" | "sales" | "sale_items" | "settings";
 
+export type OfflineSalePayload = {
+  client_ref: string;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  payment_method: string;
+  cash_received: number | null;
+  cashier_id: string | null;
+  items: Array<{
+    product_id: string;
+    name_snapshot: string;
+    qty: number;
+    unit_price: number;
+    cost_snapshot: number;
+    line_total: number;
+  }>;
+};
+
 export type QueuedMutation = {
   id: string;
-  entity: EntityName;
-  op: "insert" | "update" | "delete";
-  client_ref?: string; // for idempotent insert
-  target_id?: string;  // for update/delete
-  base_updated_at?: string | null; // server updated_at we read from
+  entity: EntityName | "offline_sale";
+  op: "insert" | "update" | "delete" | "sale";
+  client_ref?: string;
+  target_id?: string;
+  base_updated_at?: string | null;
   payload: Record<string, unknown>;
   created_at: number;
 };
