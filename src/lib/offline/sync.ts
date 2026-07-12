@@ -26,7 +26,7 @@ const EDITABLE_FIELDS: Record<EntityName, string[]> = {
 
 export async function refreshSnapshot(entity: EntityName) {
   if (!isOnline()) return;
-  const { data, error } = await supabase.from(entity).select("*");
+  const { data, error } = await sb.from(entity).select("*");
   if (error || !data) return;
   await bulkPutSnapshot(entity, data as Array<{ id: string } & Record<string, unknown>>);
 }
@@ -51,7 +51,7 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
         if (m.op === "insert") {
           const payload = { ...m.payload };
           if (m.client_ref) (payload as Record<string, unknown>).client_ref = m.client_ref;
-          const { data, error } = await supabase.from(m.entity).upsert(
+          const { data, error } = await sb.from(m.entity).upsert(
             payload,
             m.client_ref ? { onConflict: "client_ref" } : undefined,
           ).select().maybeSingle();
@@ -59,7 +59,7 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
           if (data) await putSnapshot(m.entity, data as { id: string });
           await dequeue(m.id); applied++;
         } else if (m.op === "delete" && m.target_id) {
-          const { error } = await supabase.from(m.entity).delete().eq("id", m.target_id);
+          const { error } = await sb.from(m.entity).delete().eq("id", m.target_id);
           if (error) throw error;
           await deleteSnapshot(m.entity, m.target_id);
           await dequeue(m.id); applied++;
@@ -97,7 +97,7 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
             continue;
           }
           // No overlap -> safe to apply (merge)
-          const { data, error } = await supabase.from(m.entity)
+          const { data, error } = await sb.from(m.entity)
             .update(localChanges).eq("id", m.target_id).select().maybeSingle();
           if (error) throw error;
           if (data) await putSnapshot(m.entity, data as { id: string });

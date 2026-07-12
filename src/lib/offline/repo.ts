@@ -10,7 +10,7 @@ import { emitChange, isOnline } from "./network";
 
 export async function repoList<T = Record<string, unknown>>(entity: EntityName): Promise<T[]> {
   if (isOnline()) {
-    const { data, error } = await supabase.from(entity).select("*");
+    const { data, error } = await sb.from(entity).select("*");
     if (!error && data) {
       await bulkPutSnapshot(entity, data as Array<{ id: string } & Record<string, unknown>>);
       return data as T[];
@@ -23,7 +23,7 @@ export async function repoInsert(entity: EntityName, payload: Record<string, unk
   const client_ref = (payload.client_ref as string | undefined) ?? crypto.randomUUID();
   const full = { ...payload, client_ref };
   if (isOnline()) {
-    const { data, error } = await supabase.from(entity).upsert(full, { onConflict: "client_ref" }).select().maybeSingle();
+    const { data, error } = await sb.from(entity).upsert(full, { onConflict: "client_ref" }).select().maybeSingle();
     if (!error && data) {
       await putSnapshot(entity, data as { id: string });
       return data;
@@ -42,7 +42,7 @@ export async function repoUpdate(entity: EntityName, id: string, patch: Record<s
   const current = await getSnapshot<{ updated_at?: string }>(entity, id);
   const base_updated_at = current?.updated_at ?? null;
   if (isOnline()) {
-    const { data, error } = await supabase.from(entity).update(patch).eq("id", id).select().maybeSingle();
+    const { data, error } = await sb.from(entity).update(patch).eq("id", id).select().maybeSingle();
     if (!error && data) {
       await putSnapshot(entity, data as { id: string });
       return data;
@@ -57,7 +57,7 @@ export async function repoUpdate(entity: EntityName, id: string, patch: Record<s
 
 export async function repoDelete(entity: EntityName, id: string) {
   if (isOnline()) {
-    const { error } = await supabase.from(entity).delete().eq("id", id);
+    const { error } = await sb.from(entity).delete().eq("id", id);
     if (!error) { await deleteSnapshot(entity, id); return; }
   }
   await deleteSnapshot(entity, id);
