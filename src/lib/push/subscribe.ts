@@ -24,7 +24,7 @@ export async function enablePush(): Promise<{ ok: boolean; reason?: string }> {
 
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlB64ToUint8Array(key),
+    applicationServerKey: urlB64ToUint8Array(key) as BufferSource,
   });
   const json = sub.toJSON();
   await saveSubscription({
