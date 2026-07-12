@@ -1,5 +1,7 @@
 // SyncManager: replays queued mutations, detects conflicts, refreshes snapshots.
 import { supabase } from "@/integrations/supabase/client";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabase as any;
 import {
   addConflict,
   bulkPutSnapshot,

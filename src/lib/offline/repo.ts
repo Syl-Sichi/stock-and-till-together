@@ -1,5 +1,7 @@
 // High-level offline-aware repository. Screens use these instead of touching supabase directly.
 import { supabase } from "@/integrations/supabase/client";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabase as any;
 import {
   bulkPutSnapshot, deleteSnapshot, enqueue,
   getSnapshot, listSnapshot, putSnapshot, type EntityName,
