@@ -64,7 +64,8 @@ function ConflictRow({ c }: { c: Conflict }) {
   async function keepMine() {
     setBusy(true);
     try {
-      const { data, error } = await supabase.from(c.entity)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).from(c.entity)
         .update(c.local).eq("id", c.target_id).select().maybeSingle();
       if (error) throw error;
       if (data) await putSnapshot(c.entity, data as { id: string });
