@@ -21,6 +21,7 @@ import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { ProductImage } from "@/components/ProductImage";
 import { uploadProductImage, removeProductImage, getProductImageUrl } from "@/lib/product-image";
 import { parseCsv, importProducts, downloadSampleCsv, type ImportResult } from "@/lib/csv-import";
+import { repoInsert, repoUpdate, repoDelete } from "@/lib/offline/repo";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
