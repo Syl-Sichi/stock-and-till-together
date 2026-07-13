@@ -89,6 +89,11 @@ function PendingDialog({
         if (cur) await putSnapshot("products", { ...cur, quantity: Number(cur.quantity) + it.qty });
       }
       await dequeue(m.id);
+      await logActivity({
+        kind: "cancelled", entity: m.entity, op: m.op,
+        client_ref: m.client_ref ?? p.client_ref,
+        message: `Cancelled offline sale (${formatNaira(p.total)})`,
+      });
       emitChange("queue");
       toast.success("Offline sale cancelled");
     } catch (e) {
