@@ -313,13 +313,16 @@ function ProductDialog({ product, onDone }: { product: Product | null; onDone: (
       expiry_date: form.expiry_date || null,
       image_url: imagePath,
     };
-    const { error } = product
-      ? await supabase.from("products").update(payload).eq("id", product.id)
-      : await supabase.from("products").insert(payload);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success(product ? "Product updated" : "Product created");
-    onDone();
+    try {
+      if (product) await repoUpdate("products", product.id, payload);
+      else await repoInsert("products", payload);
+      toast.success(product ? "Product updated" : "Product created");
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
