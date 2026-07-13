@@ -47,8 +47,7 @@ function SettingsPage() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("settings").update(form).eq("id", 1);
-      if (error) throw error;
+      await repoUpdate("settings", "1", form);
     },
     onSuccess: () => {
       toast.success("Settings saved");
