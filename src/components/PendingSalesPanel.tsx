@@ -6,7 +6,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  dequeue, getSnapshot, listQueue, putSnapshot, type QueuedMutation,
+  dequeue, getSnapshot, listQueue, logActivity, putSnapshot, type QueuedMutation,
 } from "@/lib/offline/db";
 import { emitChange, isOnline, onChange, onNetworkChange } from "@/lib/offline/network";
 import { runSync } from "@/lib/offline/sync";
