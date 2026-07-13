@@ -20,6 +20,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { enqueue, getSnapshot, putSnapshot } from "@/lib/offline/db";
 import { emitChange, isOnline } from "@/lib/offline/network";
 import { runSync } from "@/lib/offline/sync";
+import { PendingSalesButton } from "@/components/PendingSalesPanel";
 
 export const Route = createFileRoute("/_authenticated/pos")({
   component: POS,
