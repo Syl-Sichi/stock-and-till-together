@@ -165,15 +165,31 @@ export async function addConflict(c: Omit<Conflict, "id" | "created_at">) {
   const d = await db();
   const rec: Conflict = { id: crypto.randomUUID(), created_at: Date.now(), ...c };
   await d.put("conflicts", rec);
+  await logActivity({
+    kind: "conflict_detected",
+    entity: rec.entity,
+    target_id: rec.target_id,
+    fields: rec.fields,
+  });
   return rec;
 }
 export async function listConflicts(): Promise<Conflict[]> {
   const d = await db();
   return (await d.getAll("conflicts")) as Conflict[];
 }
-export async function resolveConflict(id: string) {
+export async function resolveConflict(id: string, choice?: "keep_mine" | "keep_server") {
   const d = await db();
+  const existing = (await d.get("conflicts", id)) as Conflict | undefined;
   await d.delete("conflicts", id);
+  if (existing) {
+    await logActivity({
+      kind: "conflict_resolved",
+      entity: existing.entity,
+      target_id: existing.target_id,
+      fields: existing.fields,
+      choice: choice ?? null,
+    });
+  }
 }
 
 // Activity log helpers
