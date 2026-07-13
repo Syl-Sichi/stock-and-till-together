@@ -66,7 +66,6 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
           ).select().maybeSingle();
           if (error) throw error;
           if (sale) {
-            // Only insert items if this sale didn't already have them (fresh insert)
             const { count } = await sb.from("sale_items").select("id", { count: "exact", head: true }).eq("sale_id", sale.id);
             if (!count) {
               const items = p.items.map((it) => ({ ...it, sale_id: sale.id }));
@@ -74,6 +73,10 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
             }
           }
           await dequeue(m.id); applied++;
+          await logActivity({
+            kind: "synced", entity: m.entity, op: m.op,
+            client_ref: m.client_ref ?? p.client_ref, server_id: sale?.id ?? null,
+          });
           continue;
         }
 
@@ -88,11 +91,19 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
           if (error) throw error;
           if (data) await putSnapshot(entity, data as { id: string });
           await dequeue(m.id); applied++;
+          await logActivity({
+            kind: "synced", entity, op: m.op,
+            client_ref: m.client_ref ?? null,
+            server_id: (data as { id?: string } | null)?.id ?? null,
+          });
         } else if (m.op === "delete" && m.target_id) {
           const { error } = await sb.from(entity).delete().eq("id", m.target_id);
           if (error) throw error;
           await deleteSnapshot(entity, m.target_id);
           await dequeue(m.id); applied++;
+          await logActivity({
+            kind: "synced", entity, op: m.op, target_id: m.target_id,
+          });
         } else if (m.op === "update" && m.target_id) {
           const { data: server, error: sErr } = await sb
             .from(entity).select("*").eq("id", m.target_id).maybeSingle();
@@ -131,10 +142,19 @@ export async function runSync(): Promise<{ applied: number; conflicts: number; f
           if (error) throw error;
           if (data) await putSnapshot(entity, data as { id: string });
           await dequeue(m.id); applied++;
+          await logActivity({
+            kind: "synced", entity, op: m.op, target_id: m.target_id,
+            server_id: (data as { id?: string } | null)?.id ?? null,
+          });
         }
       } catch (err) {
         console.warn("[sync] failed", m, err);
         failed++;
+        await logActivity({
+          kind: "failed", entity: m.entity, op: m.op,
+          client_ref: m.client_ref ?? null, target_id: m.target_id ?? null,
+          message: err instanceof Error ? err.message : String(err),
+        });
       }
     }
     if (applied || conflicts) {
