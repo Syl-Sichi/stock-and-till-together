@@ -47,8 +47,30 @@ export type Conflict = {
   created_at: number;
 };
 
+export type ActivityKind =
+  | "queued"
+  | "synced"
+  | "failed"
+  | "conflict_detected"
+  | "conflict_resolved"
+  | "cancelled";
+
+export type ActivityEntry = {
+  id: string;
+  kind: ActivityKind;
+  entity: EntityName | "offline_sale";
+  op?: "insert" | "update" | "delete" | "sale";
+  client_ref?: string | null;
+  target_id?: string | null;
+  server_id?: string | null;
+  message?: string | null;
+  fields?: string[];
+  choice?: "keep_mine" | "keep_server" | null;
+  created_at: number;
+};
+
 const DB_NAME = "myspot-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let _db: Promise<IDBPDatabase> | null = null;
 
@@ -56,7 +78,7 @@ export function db() {
   if (typeof window === "undefined") throw new Error("IndexedDB unavailable on server");
   if (!_db) {
     _db = openDB(DB_NAME, DB_VERSION, {
-      upgrade(d) {
+      upgrade(d, oldVersion) {
         if (!d.objectStoreNames.contains("snapshots")) {
           const s = d.createObjectStore("snapshots", { keyPath: ["entity", "id"] });
           s.createIndex("by_entity", "entity");
@@ -71,11 +93,16 @@ export function db() {
         if (!d.objectStoreNames.contains("meta")) {
           d.createObjectStore("meta");
         }
+        if (oldVersion < 2 && !d.objectStoreNames.contains("activity")) {
+          const a = d.createObjectStore("activity", { keyPath: "id" });
+          a.createIndex("by_created", "created_at");
+        }
       },
     });
   }
   return _db;
 }
+
 
 // Snapshot helpers
 export async function putSnapshot(entity: EntityName, row: { id: string } & Record<string, unknown>) {
@@ -111,6 +138,13 @@ export async function enqueue(m: Omit<QueuedMutation, "id" | "created_at"> & { i
     ...m,
   };
   await d.put("queue", rec);
+  await logActivity({
+    kind: "queued",
+    entity: rec.entity,
+    op: rec.op,
+    client_ref: rec.client_ref ?? null,
+    target_id: rec.target_id ?? null,
+  });
   return rec;
 }
 export async function listQueue(): Promise<QueuedMutation[]> {
@@ -131,13 +165,51 @@ export async function addConflict(c: Omit<Conflict, "id" | "created_at">) {
   const d = await db();
   const rec: Conflict = { id: crypto.randomUUID(), created_at: Date.now(), ...c };
   await d.put("conflicts", rec);
+  await logActivity({
+    kind: "conflict_detected",
+    entity: rec.entity,
+    target_id: rec.target_id,
+    fields: rec.fields,
+  });
   return rec;
 }
 export async function listConflicts(): Promise<Conflict[]> {
   const d = await db();
   return (await d.getAll("conflicts")) as Conflict[];
 }
-export async function resolveConflict(id: string) {
+export async function resolveConflict(id: string, choice?: "keep_mine" | "keep_server") {
   const d = await db();
+  const existing = (await d.get("conflicts", id)) as Conflict | undefined;
   await d.delete("conflicts", id);
+  if (existing) {
+    await logActivity({
+      kind: "conflict_resolved",
+      entity: existing.entity,
+      target_id: existing.target_id,
+      fields: existing.fields,
+      choice: choice ?? null,
+    });
+  }
+}
+
+// Activity log helpers
+export async function logActivity(a: Omit<ActivityEntry, "id" | "created_at"> & { id?: string; created_at?: number }) {
+  const d = await db();
+  const rec: ActivityEntry = {
+    id: a.id ?? crypto.randomUUID(),
+    created_at: a.created_at ?? Date.now(),
+    ...a,
+  };
+  await d.put("activity", rec);
+  return rec;
+}
+export async function listActivity(limit = 500): Promise<ActivityEntry[]> {
+  const d = await db();
+  const all = (await d.transaction("activity").store.index("by_created").getAll()) as ActivityEntry[];
+  // newest first
+  return all.sort((a, b) => b.created_at - a.created_at).slice(0, limit);
+}
+export async function clearActivity() {
+  const d = await db();
+  await d.clear("activity");
 }

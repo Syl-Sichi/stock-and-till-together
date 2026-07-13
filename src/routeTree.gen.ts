@@ -20,6 +20,7 @@ import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedRestockRouteImport } from './routes/_authenticated/restock'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
+import { Route as AuthenticatedOfflineActivityRouteImport } from './routes/_authenticated/offline-activity'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
@@ -80,6 +81,12 @@ const AuthenticatedPosRoute = AuthenticatedPosRouteImport.update({
   path: '/pos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOfflineActivityRoute =
+  AuthenticatedOfflineActivityRouteImport.update({
+    id: '/offline-activity',
+    path: '/offline-activity',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/assistant': typeof AuthenticatedAssistantRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inventory': typeof AuthenticatedInventoryRoute
+  '/offline-activity': typeof AuthenticatedOfflineActivityRoute
   '/pos': typeof AuthenticatedPosRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/restock': typeof AuthenticatedRestockRoute
@@ -131,6 +139,7 @@ export interface FileRoutesByTo {
   '/assistant': typeof AuthenticatedAssistantRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inventory': typeof AuthenticatedInventoryRoute
+  '/offline-activity': typeof AuthenticatedOfflineActivityRoute
   '/pos': typeof AuthenticatedPosRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/restock': typeof AuthenticatedRestockRoute
@@ -150,6 +159,7 @@ export interface FileRoutesById {
   '/_authenticated/assistant': typeof AuthenticatedAssistantRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
+  '/_authenticated/offline-activity': typeof AuthenticatedOfflineActivityRoute
   '/_authenticated/pos': typeof AuthenticatedPosRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/restock': typeof AuthenticatedRestockRoute
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/dashboard'
     | '/inventory'
+    | '/offline-activity'
     | '/pos'
     | '/reports'
     | '/restock'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/dashboard'
     | '/inventory'
+    | '/offline-activity'
     | '/pos'
     | '/reports'
     | '/restock'
@@ -204,6 +216,7 @@ export interface FileRouteTypes {
     | '/_authenticated/assistant'
     | '/_authenticated/dashboard'
     | '/_authenticated/inventory'
+    | '/_authenticated/offline-activity'
     | '/_authenticated/pos'
     | '/_authenticated/reports'
     | '/_authenticated/restock'
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/offline-activity': {
+      id: '/_authenticated/offline-activity'
+      path: '/offline-activity'
+      fullPath: '/offline-activity'
+      preLoaderRoute: typeof AuthenticatedOfflineActivityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inventory': {
       id: '/_authenticated/inventory'
       path: '/inventory'
@@ -346,6 +366,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
+  AuthenticatedOfflineActivityRoute: typeof AuthenticatedOfflineActivityRoute
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedRestockRoute: typeof AuthenticatedRestockRoute
@@ -358,6 +379,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAssistantRoute: AuthenticatedAssistantRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
+  AuthenticatedOfflineActivityRoute: AuthenticatedOfflineActivityRoute,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedRestockRoute: AuthenticatedRestockRoute,
