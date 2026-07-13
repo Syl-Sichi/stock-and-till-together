@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { useCurrentRole } from "@/hooks/useCurrentRole";
+import { repoInsert, repoDelete } from "@/lib/offline/repo";
 
 export const Route = createFileRoute("/_authenticated/suppliers")({
   component: Suppliers,
