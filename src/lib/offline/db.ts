@@ -47,8 +47,30 @@ export type Conflict = {
   created_at: number;
 };
 
+export type ActivityKind =
+  | "queued"
+  | "synced"
+  | "failed"
+  | "conflict_detected"
+  | "conflict_resolved"
+  | "cancelled";
+
+export type ActivityEntry = {
+  id: string;
+  kind: ActivityKind;
+  entity: EntityName | "offline_sale";
+  op?: "insert" | "update" | "delete" | "sale";
+  client_ref?: string | null;
+  target_id?: string | null;
+  server_id?: string | null;
+  message?: string | null;
+  fields?: string[];
+  choice?: "keep_mine" | "keep_server" | null;
+  created_at: number;
+};
+
 const DB_NAME = "myspot-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let _db: Promise<IDBPDatabase> | null = null;
 
@@ -56,7 +78,7 @@ export function db() {
   if (typeof window === "undefined") throw new Error("IndexedDB unavailable on server");
   if (!_db) {
     _db = openDB(DB_NAME, DB_VERSION, {
-      upgrade(d) {
+      upgrade(d, oldVersion) {
         if (!d.objectStoreNames.contains("snapshots")) {
           const s = d.createObjectStore("snapshots", { keyPath: ["entity", "id"] });
           s.createIndex("by_entity", "entity");
@@ -71,11 +93,16 @@ export function db() {
         if (!d.objectStoreNames.contains("meta")) {
           d.createObjectStore("meta");
         }
+        if (oldVersion < 2 && !d.objectStoreNames.contains("activity")) {
+          const a = d.createObjectStore("activity", { keyPath: "id" });
+          a.createIndex("by_created", "created_at");
+        }
       },
     });
   }
   return _db;
 }
+
 
 // Snapshot helpers
 export async function putSnapshot(entity: EntityName, row: { id: string } & Record<string, unknown>) {
