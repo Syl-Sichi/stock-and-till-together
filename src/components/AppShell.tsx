@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   PackagePlus,
+  CloudOff,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
