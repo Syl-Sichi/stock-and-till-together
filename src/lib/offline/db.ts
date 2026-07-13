@@ -138,6 +138,13 @@ export async function enqueue(m: Omit<QueuedMutation, "id" | "created_at"> & { i
     ...m,
   };
   await d.put("queue", rec);
+  await logActivity({
+    kind: "queued",
+    entity: rec.entity,
+    op: rec.op,
+    client_ref: rec.client_ref ?? null,
+    target_id: rec.target_id ?? null,
+  });
   return rec;
 }
 export async function listQueue(): Promise<QueuedMutation[]> {
