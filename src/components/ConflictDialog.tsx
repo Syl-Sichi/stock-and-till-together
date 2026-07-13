@@ -69,7 +69,7 @@ function ConflictRow({ c }: { c: Conflict }) {
         .update(c.local).eq("id", c.target_id).select().maybeSingle();
       if (error) throw error;
       if (data) await putSnapshot(c.entity, data as { id: string });
-      await resolveConflict(c.id);
+      await resolveConflict(c.id, "keep_server");
       emitChange("conflicts");
       toast.success("Your version applied");
     } catch (e) {
