@@ -208,6 +208,12 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div style="display:
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
       <div className="lg:col-span-3 space-y-4">
         <Card className="p-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="text-xs text-muted-foreground">
+              Scan or search a product to add it to the sale.
+            </div>
+            <PendingSalesButton />
+          </div>
           <form onSubmit={scanSubmit} className="flex gap-2">
             <div className="relative flex-1">
               <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -223,6 +229,7 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div style="display:
             <Button type="submit" variant="outline">Enter</Button>
           </form>
         </Card>
+
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {filtered.map((p) => (
