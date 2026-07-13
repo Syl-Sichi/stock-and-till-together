@@ -9,6 +9,7 @@ import {
   deleteSnapshot,
   type EntityName,
   listQueue,
+  logActivity,
   putSnapshot,
 } from "./db";
 import { emitChange, isOnline, onNetworkChange } from "./network";
