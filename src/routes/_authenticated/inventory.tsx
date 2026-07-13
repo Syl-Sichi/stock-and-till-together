@@ -67,8 +67,7 @@ function Inventory() {
   const del = useMutation({
     mutationFn: async (p: Product) => {
       if (p.image_url) await removeProductImage(p.image_url).catch(() => {});
-      const { error } = await supabase.from("products").delete().eq("id", p.id);
-      if (error) throw error;
+      await repoDelete("products", p.id);
     },
     onSuccess: () => {
       toast.success("Product deleted");
@@ -79,8 +78,7 @@ function Inventory() {
 
   const archive = useMutation({
     mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
-      const { error } = await supabase.from("products").update({ archived }).eq("id", id);
-      if (error) throw error;
+      await repoUpdate("products", id, { archived });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
     onError: (e: Error) => toast.error(e.message),
