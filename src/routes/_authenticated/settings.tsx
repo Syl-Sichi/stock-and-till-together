@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { EnableNotifications } from "@/components/EnableNotifications";
+import { repoUpdate } from "@/lib/offline/repo";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -46,8 +47,7 @@ function SettingsPage() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("settings").update(form).eq("id", 1);
-      if (error) throw error;
+      await repoUpdate("settings", "1", form);
     },
     onSuccess: () => {
       toast.success("Settings saved");

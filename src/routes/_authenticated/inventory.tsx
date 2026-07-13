@@ -21,6 +21,7 @@ import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { ProductImage } from "@/components/ProductImage";
 import { uploadProductImage, removeProductImage, getProductImageUrl } from "@/lib/product-image";
 import { parseCsv, importProducts, downloadSampleCsv, type ImportResult } from "@/lib/csv-import";
+import { repoInsert, repoUpdate, repoDelete } from "@/lib/offline/repo";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
@@ -66,8 +67,7 @@ function Inventory() {
   const del = useMutation({
     mutationFn: async (p: Product) => {
       if (p.image_url) await removeProductImage(p.image_url).catch(() => {});
-      const { error } = await supabase.from("products").delete().eq("id", p.id);
-      if (error) throw error;
+      await repoDelete("products", p.id);
     },
     onSuccess: () => {
       toast.success("Product deleted");
@@ -78,8 +78,7 @@ function Inventory() {
 
   const archive = useMutation({
     mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
-      const { error } = await supabase.from("products").update({ archived }).eq("id", id);
-      if (error) throw error;
+      await repoUpdate("products", id, { archived });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
     onError: (e: Error) => toast.error(e.message),
@@ -314,13 +313,16 @@ function ProductDialog({ product, onDone }: { product: Product | null; onDone: (
       expiry_date: form.expiry_date || null,
       image_url: imagePath,
     };
-    const { error } = product
-      ? await supabase.from("products").update(payload).eq("id", product.id)
-      : await supabase.from("products").insert(payload);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success(product ? "Product updated" : "Product created");
-    onDone();
+    try {
+      if (product) await repoUpdate("products", product.id, payload);
+      else await repoInsert("products", payload);
+      toast.success(product ? "Product updated" : "Product created");
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
