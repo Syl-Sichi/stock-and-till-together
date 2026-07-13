@@ -80,7 +80,7 @@ function ConflictRow({ c }: { c: Conflict }) {
     setBusy(true);
     try {
       await putSnapshot(c.entity, c.server as { id: string });
-      await resolveConflict(c.id);
+      await resolveConflict(c.id, "keep_mine");
       emitChange("conflicts");
       toast.success("Server version kept");
     } finally { setBusy(false); }
