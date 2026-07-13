@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useCurrentRole } from "@/hooks/useCurrentRole";
 import { EnableNotifications } from "@/components/EnableNotifications";
+import { repoUpdate } from "@/lib/offline/repo";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
