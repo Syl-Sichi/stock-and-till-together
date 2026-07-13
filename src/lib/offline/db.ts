@@ -168,3 +168,25 @@ export async function resolveConflict(id: string) {
   const d = await db();
   await d.delete("conflicts", id);
 }
+
+// Activity log helpers
+export async function logActivity(a: Omit<ActivityEntry, "id" | "created_at"> & { id?: string; created_at?: number }) {
+  const d = await db();
+  const rec: ActivityEntry = {
+    id: a.id ?? crypto.randomUUID(),
+    created_at: a.created_at ?? Date.now(),
+    ...a,
+  };
+  await d.put("activity", rec);
+  return rec;
+}
+export async function listActivity(limit = 500): Promise<ActivityEntry[]> {
+  const d = await db();
+  const all = (await d.transaction("activity").store.index("by_created").getAll()) as ActivityEntry[];
+  // newest first
+  return all.sort((a, b) => b.created_at - a.created_at).slice(0, limit);
+}
+export async function clearActivity() {
+  const d = await db();
+  await d.clear("activity");
+}
