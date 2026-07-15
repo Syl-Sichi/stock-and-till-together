@@ -14,23 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatNaira } from "@/lib/format";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Minus,
-  Plus,
-  ScanBarcode,
-  Trash2,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, Minus, Plus, ScanBarcode, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSettings } from "@/hooks/useSettings";
-import {
-  bulkPutSnapshot,
-  enqueue,
-  getSnapshot,
-  listSnapshot,
-  putSnapshot,
-} from "@/lib/offline/db";
+import { bulkPutSnapshot, enqueue, getSnapshot, listSnapshot, putSnapshot } from "@/lib/offline/db";
 import { emitChange, isOnline } from "@/lib/offline/network";
 import { runSync } from "@/lib/offline/sync";
 import { PendingSalesButton } from "@/components/PendingSalesPanel";
