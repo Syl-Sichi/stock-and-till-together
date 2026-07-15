@@ -14,10 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatNaira } from "@/lib/format";
-import { Minus, Plus, Search, Trash2, ScanBarcode } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Minus, Plus, Trash2, ScanBarcode } from "lucide-react";
 import { toast } from "sonner";
 import { useSettings } from "@/hooks/useSettings";
-import { enqueue, getSnapshot, putSnapshot } from "@/lib/offline/db";
+import { bulkPutSnapshot, enqueue, getSnapshot, listSnapshot, putSnapshot } from "@/lib/offline/db";
 import { emitChange, isOnline } from "@/lib/offline/network";
 import { runSync } from "@/lib/offline/sync";
 import { PendingSalesButton } from "@/components/PendingSalesPanel";
@@ -33,9 +33,18 @@ type Product = {
   selling_price: number;
   cost_price: number;
   quantity: number;
+  min_stock: number;
 };
 
 type CartLine = { product: Product; qty: number };
+type StockNoticeLine = {
+  product_id: string;
+  name: string;
+  sold: number;
+  remaining: number;
+  min: number;
+  level: "normal" | "low" | "out";
+};
 
 function POS() {
   const qc = useQueryClient();
@@ -45,6 +54,10 @@ function POS() {
   const [discountPct, setDiscountPct] = useState(0);
   const [payment, setPayment] = useState("cash");
   const [cashReceived, setCashReceived] = useState<number | "">("");
+  const [lastSaleNotice, setLastSaleNotice] = useState<{
+    offline: boolean;
+    lines: StockNoticeLine[];
+  } | null>(null);
   const scanRef = useRef<HTMLInputElement>(null);
 
   const products = useQuery({
@@ -52,11 +65,15 @@ function POS() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,barcode,selling_price,cost_price,quantity")
+        .select("id,name,barcode,selling_price,cost_price,quantity,min_stock")
         .eq("archived", false)
         .order("name");
-      if (error) throw error;
-      return data as Product[];
+      if (!error && data) {
+        await bulkPutSnapshot("products", data as Product[]);
+        return data as Product[];
+      }
+      if (!isOnline()) return listSnapshot<Product>("products");
+      throw error;
     },
   });
 
@@ -121,11 +138,24 @@ function POS() {
         payment_method: payment,
         cash_received: payment === "cash" && typeof cashReceived === "number" ? cashReceived : null,
       };
+      const threshold = Number(settings.data?.low_stock_threshold ?? 0);
+      const localStock = new Map<string, { quantity: number; min_stock: number; name: string }>();
 
       // Optimistically decrement local product snapshots so UI stays correct offline
       for (const it of items) {
-        const cur = await getSnapshot<{ id: string; quantity: number }>("products", it.product_id);
-        if (cur) await putSnapshot("products", { ...cur, quantity: Math.max(0, Number(cur.quantity) - it.qty) });
+        const product = cart.find((l) => l.product.id === it.product_id)?.product;
+        const cur = await getSnapshot<{ id: string; quantity: number; min_stock?: number; name?: string }>(
+          "products",
+          it.product_id,
+        );
+        const base = cur ?? product;
+        if (base) {
+          const quantity = Math.max(0, Number(base.quantity) - it.qty);
+          const min_stock = Number(base.min_stock ?? product?.min_stock ?? threshold);
+          const name = String(base.name ?? product?.name ?? it.name_snapshot);
+          await putSnapshot("products", { ...base, id: it.product_id, quantity, min_stock, name });
+          localStock.set(it.product_id, { quantity, min_stock, name });
+        }
       }
 
       if (isOnline()) {
@@ -137,7 +167,26 @@ function POS() {
           const { error: e2 } = await supabase.from("sale_items")
             .insert(items.map((it) => ({ ...it, sale_id: sale.id })));
           if (e2) throw e2;
-          return { id: sale.id, offline: false };
+          const ids = [...new Set(items.map((it) => it.product_id))];
+          const { data: updatedProducts } = await supabase
+            .from("products")
+            .select("id,name,quantity,min_stock")
+            .in("id", ids);
+          const updatedById = new Map(
+            (updatedProducts ?? []).map((p) => [
+              p.id,
+              {
+                quantity: Number(p.quantity),
+                min_stock: Number(p.min_stock),
+                name: p.name,
+              },
+            ]),
+          );
+          for (const p of updatedProducts ?? []) {
+            const product = cart.find((l) => l.product.id === p.id)?.product;
+            await putSnapshot("products", { ...(product ?? {}), ...p, id: p.id });
+          }
+          return { id: sale.id, offline: false, stock: buildStockNoticeLines(items, cart, updatedById, threshold) };
         } catch (e) {
           console.warn("[POS] online checkout failed, queueing", e);
         }
@@ -150,28 +199,34 @@ function POS() {
         payload: { ...salePayload, items } as unknown as Record<string, unknown>,
       });
       emitChange("queue");
-      return { id: client_ref, offline: true };
+      return { id: client_ref, offline: true, stock: buildStockNoticeLines(items, cart, localStock, threshold) };
     },
     onSuccess: async (res) => {
-      toast.success(res.offline ? "Sale saved offline — will sync automatically" : "Sale completed");
-      // Low-stock check on sold items (works in preview and offline)
-      const threshold = Number(settings.data?.low_stock_threshold ?? 0);
-      const alerts: string[] = [];
-      for (const l of cart) {
-        const snap = await getSnapshot<{ id: string; quantity: number; min_stock?: number; name?: string }>(
-          "products", l.product.id,
-        );
-        const remaining = snap?.quantity ?? Math.max(0, l.product.quantity - l.qty);
-        const min = Number(snap?.min_stock ?? threshold ?? 0);
-        if (remaining <= min) {
-          alerts.push(
-            remaining === 0
-              ? `${l.product.name} is out of stock`
-              : `${l.product.name} is low — ${remaining} left (min ${min})`,
-          );
+      setLastSaleNotice({ offline: res.offline, lines: res.stock });
+      const soldSummary = res.stock
+        .map((line) => `${line.name}: ${line.sold} sold, ${line.remaining} left`)
+        .join("\n");
+      toast.success(res.offline ? "Sale saved offline" : "Sale completed", {
+        description: soldSummary || undefined,
+        duration: 7000,
+      });
+      for (const line of res.stock) {
+        if (line.level === "out") {
+          toast.error(`${line.name} is finished — 0 left. Restock now.`, { duration: 10000 });
+        } else if (line.level === "low") {
+          toast.error(`${line.name} is low — ${line.remaining} left (minimum ${line.min}). Restock now.`, {
+            duration: 10000,
+          });
         }
       }
-      for (const msg of alerts) toast.warning(msg, { duration: 6000 });
+      qc.setQueryData<Product[]>(["pos-products"], (old) => {
+        if (!old) return old;
+        const byId = new Map(res.stock.map((line) => [line.product_id, line]));
+        return old.map((p) => {
+          const line = byId.get(p.id);
+          return line ? { ...p, quantity: line.remaining, min_stock: line.min } : p;
+        });
+      });
       qc.invalidateQueries({ queryKey: ["pos-products"] });
       qc.invalidateQueries({ queryKey: ["dash"] });
       qc.invalidateQueries({ queryKey: ["sales"] });
@@ -234,6 +289,8 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div class="row"><sp
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
       <div className="lg:col-span-3 space-y-4">
+        {lastSaleNotice && <StockNotice notice={lastSaleNotice} />}
+
         <Card className="p-4">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="text-xs text-muted-foreground">
@@ -403,6 +460,62 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div class="row"><sp
         </div>
       </Card>
     </div>
+  );
+}
+
+function buildStockNoticeLines(
+  items: Array<{ product_id: string; name_snapshot: string; qty: number }>,
+  cart: CartLine[],
+  stockById: Map<string, { quantity: number; min_stock: number; name: string }>,
+  threshold: number,
+): StockNoticeLine[] {
+  return items.map((it) => {
+    const product = cart.find((l) => l.product.id === it.product_id)?.product;
+    const stock = stockById.get(it.product_id);
+    const remaining = Math.max(0, Number(stock?.quantity ?? (product ? product.quantity - it.qty : 0)));
+    const min = Number(stock?.min_stock ?? product?.min_stock ?? threshold ?? 0);
+    return {
+      product_id: it.product_id,
+      name: stock?.name ?? product?.name ?? it.name_snapshot,
+      sold: it.qty,
+      remaining,
+      min,
+      level: remaining <= 0 ? "out" : remaining <= min ? "low" : "normal",
+    };
+  });
+}
+
+function StockNotice({ notice }: { notice: { offline: boolean; lines: StockNoticeLine[] } }) {
+  const hasAlert = notice.lines.some((line) => line.level !== "normal");
+  return (
+    <Card
+      role="status"
+      aria-live="polite"
+      className={`p-4 border ${hasAlert ? "border-destructive/40 bg-destructive/10" : "border-primary/20 bg-primary/5"}`}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`mt-0.5 ${hasAlert ? "text-destructive" : "text-primary"}`}>
+          {hasAlert ? <AlertTriangle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold">
+            {hasAlert ? "Stock alert" : notice.offline ? "Offline sale saved" : "Sale completed"}
+          </div>
+          <div className="mt-1 space-y-1 text-sm">
+            {notice.lines.map((line) => (
+              <div key={line.product_id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="font-medium">{line.name} has been sold.</span>
+                <span>{line.sold} sold.</span>
+                <span className={line.level === "normal" ? "text-muted-foreground" : "font-semibold text-destructive"}>
+                  {line.remaining} left.
+                </span>
+                {line.level !== "normal" && <span className="text-destructive">Restock now.</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 
