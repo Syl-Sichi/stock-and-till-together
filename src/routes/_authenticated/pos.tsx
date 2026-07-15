@@ -152,8 +152,26 @@ function POS() {
       emitChange("queue");
       return { id: client_ref, offline: true };
     },
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       toast.success(res.offline ? "Sale saved offline — will sync automatically" : "Sale completed");
+      // Low-stock check on sold items (works in preview and offline)
+      const threshold = Number(settings.data?.low_stock_threshold ?? 0);
+      const alerts: string[] = [];
+      for (const l of cart) {
+        const snap = await getSnapshot<{ id: string; quantity: number; min_stock?: number; name?: string }>(
+          "products", l.product.id,
+        );
+        const remaining = snap?.quantity ?? Math.max(0, l.product.quantity - l.qty);
+        const min = Number(snap?.min_stock ?? threshold ?? 0);
+        if (remaining <= min) {
+          alerts.push(
+            remaining === 0
+              ? `${l.product.name} is out of stock`
+              : `${l.product.name} is low — ${remaining} left (min ${min})`,
+          );
+        }
+      }
+      for (const msg of alerts) toast.warning(msg, { duration: 6000 });
       qc.invalidateQueries({ queryKey: ["pos-products"] });
       qc.invalidateQueries({ queryKey: ["dash"] });
       qc.invalidateQueries({ queryKey: ["sales"] });
