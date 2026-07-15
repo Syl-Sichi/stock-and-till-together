@@ -14,10 +14,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatNaira } from "@/lib/format";
-import { AlertTriangle, CheckCircle2, Minus, Plus, Trash2, ScanBarcode } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Minus,
+  Plus,
+  ScanBarcode,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useSettings } from "@/hooks/useSettings";
-import { bulkPutSnapshot, enqueue, getSnapshot, listSnapshot, putSnapshot } from "@/lib/offline/db";
+import {
+  bulkPutSnapshot,
+  enqueue,
+  getSnapshot,
+  listSnapshot,
+  putSnapshot,
+} from "@/lib/offline/db";
 import { emitChange, isOnline } from "@/lib/offline/network";
 import { runSync } from "@/lib/offline/sync";
 import { PendingSalesButton } from "@/components/PendingSalesPanel";
@@ -93,9 +106,7 @@ function POS() {
     setCart((c) => {
       const existing = c.find((l) => l.product.id === product.id);
       if (existing)
-        return c.map((l) =>
-          l.product.id === product.id ? { ...l, qty: l.qty + 1 } : l,
-        );
+        return c.map((l) => (l.product.id === product.id ? { ...l, qty: l.qty + 1 } : l));
       return [...c, { product, qty: 1 }];
     });
     setQ("");
@@ -104,7 +115,9 @@ function POS() {
   function scanSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!q) return;
-    const match = (products.data ?? []).find((p) => p.barcode === q || p.name.toLowerCase() === q.toLowerCase());
+    const match = (products.data ?? []).find(
+      (p) => p.barcode === q || p.name.toLowerCase() === q.toLowerCase(),
+    );
     if (match) add(match);
     else toast.error("No product matches that code");
   }
@@ -134,7 +147,10 @@ function POS() {
       const salePayload = {
         client_ref,
         cashier_id: uid,
-        subtotal, discount, tax, total,
+        subtotal,
+        discount,
+        tax,
+        total,
         payment_method: payment,
         cash_received: payment === "cash" && typeof cashReceived === "number" ? cashReceived : null,
       };
@@ -144,10 +160,12 @@ function POS() {
       // Optimistically decrement local product snapshots so UI stays correct offline
       for (const it of items) {
         const product = cart.find((l) => l.product.id === it.product_id)?.product;
-        const cur = await getSnapshot<{ id: string; quantity: number; min_stock?: number; name?: string }>(
-          "products",
-          it.product_id,
-        );
+        const cur = await getSnapshot<{
+          id: string;
+          quantity: number;
+          min_stock?: number;
+          name?: string;
+        }>("products", it.product_id);
         const base = cur ?? product;
         if (base) {
           const quantity = Math.max(0, Number(base.quantity) - it.qty);
@@ -160,11 +178,14 @@ function POS() {
 
       if (isOnline()) {
         try {
-          const { data: sale, error } = await supabase.from("sales")
+          const { data: sale, error } = await supabase
+            .from("sales")
             .upsert({ ...salePayload }, { onConflict: "client_ref" })
-            .select("*").single();
+            .select("*")
+            .single();
           if (error) throw error;
-          const { error: e2 } = await supabase.from("sale_items")
+          const { error: e2 } = await supabase
+            .from("sale_items")
             .insert(items.map((it) => ({ ...it, sale_id: sale.id })));
           if (e2) throw e2;
           const ids = [...new Set(items.map((it) => it.product_id))];
@@ -186,7 +207,11 @@ function POS() {
             const product = cart.find((l) => l.product.id === p.id)?.product;
             await putSnapshot("products", { ...(product ?? {}), ...p, id: p.id });
           }
-          return { id: sale.id, offline: false, stock: buildStockNoticeLines(items, cart, updatedById, threshold) };
+          return {
+            id: sale.id,
+            offline: false,
+            stock: buildStockNoticeLines(items, cart, updatedById, threshold),
+          };
         } catch (e) {
           console.warn("[POS] online checkout failed, queueing", e);
         }
@@ -199,7 +224,11 @@ function POS() {
         payload: { ...salePayload, items } as unknown as Record<string, unknown>,
       });
       emitChange("queue");
-      return { id: client_ref, offline: true, stock: buildStockNoticeLines(items, cart, localStock, threshold) };
+      return {
+        id: client_ref,
+        offline: true,
+        stock: buildStockNoticeLines(items, cart, localStock, threshold),
+      };
     },
     onSuccess: async (res) => {
       setLastSaleNotice({ offline: res.offline, lines: res.stock });
@@ -214,9 +243,12 @@ function POS() {
         if (line.level === "out") {
           toast.error(`${line.name} is finished — 0 left. Restock now.`, { duration: 10000 });
         } else if (line.level === "low") {
-          toast.error(`${line.name} is low — ${line.remaining} left (minimum ${line.min}). Restock now.`, {
-            duration: 10000,
-          });
+          toast.error(
+            `${line.name} is low — ${line.remaining} left (minimum ${line.min}). Restock now.`,
+            {
+              duration: 10000,
+            },
+          );
         }
       }
       qc.setQueryData<Product[]>(["pos-products"], (old) => {
@@ -310,10 +342,11 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div class="row"><sp
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            <Button type="submit" variant="outline">Enter</Button>
+            <Button type="submit" variant="outline">
+              Enter
+            </Button>
           </form>
         </Card>
-
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {filtered.map((p) => (
@@ -424,7 +457,9 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div class="row"><sp
           <div className="flex items-center gap-2 pt-2">
             <Label className="flex-1">Payment</Label>
             <Select value={payment} onValueChange={setPayment}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="cash">Cash</SelectItem>
                 <SelectItem value="transfer">Bank transfer</SelectItem>
@@ -472,7 +507,10 @@ function buildStockNoticeLines(
   return items.map((it) => {
     const product = cart.find((l) => l.product.id === it.product_id)?.product;
     const stock = stockById.get(it.product_id);
-    const remaining = Math.max(0, Number(stock?.quantity ?? (product ? product.quantity - it.qty : 0)));
+    const remaining = Math.max(
+      0,
+      Number(stock?.quantity ?? (product ? product.quantity - it.qty : 0)),
+    );
     const min = Number(stock?.min_stock ?? product?.min_stock ?? threshold ?? 0);
     return {
       product_id: it.product_id,
@@ -506,7 +544,13 @@ function StockNotice({ notice }: { notice: { offline: boolean; lines: StockNotic
               <div key={line.product_id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="font-medium">{line.name} has been sold.</span>
                 <span>{line.sold} sold.</span>
-                <span className={line.level === "normal" ? "text-muted-foreground" : "font-semibold text-destructive"}>
+                <span
+                  className={
+                    line.level === "normal"
+                      ? "text-muted-foreground"
+                      : "font-semibold text-destructive"
+                  }
+                >
                   {line.remaining} left.
                 </span>
                 {line.level !== "normal" && <span className="text-destructive">Restock now.</span>}
@@ -521,7 +565,9 @@ function StockNotice({ notice }: { notice: { offline: boolean; lines: StockNotic
 
 function Row({ label, value, big }: { label: string; value: string; big?: boolean }) {
   return (
-    <div className={`flex items-center justify-between ${big ? "text-lg font-display font-bold" : ""}`}>
+    <div
+      className={`flex items-center justify-between ${big ? "text-lg font-display font-bold" : ""}`}
+    >
       <span className={big ? "" : "text-muted-foreground"}>{label}</span>
       <span>{value}</span>
     </div>
