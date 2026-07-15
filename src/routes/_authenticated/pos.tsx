@@ -197,22 +197,31 @@ function POS() {
       )
       .join("");
     w.document.write(`<!doctype html><html><head><title>Receipt</title>
-<style>body{font-family:ui-sans-serif,system-ui;padding:16px;font-size:12px}h2{margin:0;text-align:center}
-table{width:100%;border-collapse:collapse;margin-top:12px}td{padding:3px 0}
-.tot{border-top:1px dashed #000;margin-top:10px;padding-top:8px}</style></head><body>
+<style>
+@page { size: 80mm auto; margin: 0; }
+html,body{margin:0;padding:0}
+body{font-family:ui-monospace,Menlo,Consolas,monospace;padding:6mm 4mm;font-size:11px;width:72mm;color:#000}
+h2{margin:0;text-align:center;font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px}
+td,th{padding:2px 0}
+.tot{border-top:1px dashed #000;margin-top:8px;padding-top:6px}
+.row{display:flex;justify-content:space-between;gap:8px}
+.muted{color:#444;text-align:center;font-size:10px}
+@media print { body { width: 72mm; } }
+</style></head><body>
 <h2>${settings.data?.store_name ?? "My Spot"}</h2>
-<div style="text-align:center;color:#555">Receipt · ${saleId.slice(0, 8)}</div>
-<div style="text-align:center;color:#555">${new Date().toLocaleString("en-NG")}</div>
+<div class="muted">Receipt · ${saleId.slice(0, 8)}</div>
+<div class="muted">${new Date().toLocaleString("en-NG")}</div>
 <table><thead><tr><th style="text-align:left">Item</th><th style="text-align:right">Qty</th><th style="text-align:right">Total</th></tr></thead><tbody>${lines}</tbody></table>
 <div class="tot">
-<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${formatNaira(subtotal)}</span></div>
-${discount ? `<div style="display:flex;justify-content:space-between"><span>Discount</span><span>-${formatNaira(discount)}</span></div>` : ""}
-${tax ? `<div style="display:flex;justify-content:space-between"><span>Tax</span><span>${formatNaira(tax)}</span></div>` : ""}
-<div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-top:4px"><span>Total</span><span>${formatNaira(total)}</span></div>
-<div style="display:flex;justify-content:space-between"><span>Payment</span><span>${payment}</span></div>
-${payment === "cash" && typeof cashReceived === "number" ? `<div style="display:flex;justify-content:space-between"><span>Change</span><span>${formatNaira(change)}</span></div>` : ""}
+<div class="row"><span>Subtotal</span><span>${formatNaira(subtotal)}</span></div>
+${discount ? `<div class="row"><span>Discount</span><span>-${formatNaira(discount)}</span></div>` : ""}
+${tax ? `<div class="row"><span>Tax</span><span>${formatNaira(tax)}</span></div>` : ""}
+<div class="row" style="font-weight:700;font-size:13px;margin-top:4px"><span>Total</span><span>${formatNaira(total)}</span></div>
+<div class="row"><span>Payment</span><span>${payment}</span></div>
+${payment === "cash" && typeof cashReceived === "number" ? `<div class="row"><span>Change</span><span>${formatNaira(change)}</span></div>` : ""}
 </div>
-<p style="text-align:center;margin-top:16px;color:#555">${settings.data?.receipt_footer ?? "Thank you!"}</p>
+<p class="muted" style="margin-top:12px">${settings.data?.receipt_footer ?? "Thank you!"}</p>
 <script>window.print();</script>
 </body></html>`);
     w.document.close();
