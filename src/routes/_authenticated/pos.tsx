@@ -69,11 +69,11 @@ function POS() {
         .eq("archived", false)
         .order("name");
       if (!error && data) {
-        await bulkPutSnapshot("products", data as Product[]);
+        await bulkPutSnapshot("products", data as Array<{ id: string } & Record<string, unknown>>);
         return data as Product[];
       }
       if (!isOnline()) return listSnapshot<Product>("products");
-      throw error;
+      throw error ?? new Error("Could not load products");
     },
   });
 
