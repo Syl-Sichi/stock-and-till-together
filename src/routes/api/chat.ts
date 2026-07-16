@@ -89,31 +89,35 @@ function buildShopTools(token: string) {
         search: z.string().describe("Product name, SKU, barcode, or partial search text"),
       }),
       execute: async ({ search }) => {
-        const term = search.trim();
         const { data, error } = await supabase
           .from("products")
           .select("id,name,sku,barcode,quantity,min_stock,selling_price,cost_price,updated_at,archived")
-          .or(`name.ilike.%${term}%,sku.ilike.%${term}%,barcode.ilike.%${term}%`)
           .order("quantity")
-          .limit(12);
+          .limit(200);
         if (error) throw new Error(error.message);
-        return (data ?? []).map((p) => ({
-          name: p.name,
-          sku: p.sku,
-          barcode: p.barcode,
-          quantity: Number(p.quantity),
-          min_stock: Number(p.min_stock),
-          status:
-            Number(p.quantity) <= 0
-              ? "out_of_stock"
-              : Number(p.quantity) <= Number(p.min_stock)
-                ? "low_stock"
-                : "in_stock",
-          selling_price: Number(p.selling_price),
-          cost_price: Number(p.cost_price),
-          updated_at: p.updated_at,
-          archived: p.archived,
-        }));
+        const term = search.trim().toLowerCase();
+        return (data ?? [])
+          .filter((p) =>
+            [p.name, p.sku, p.barcode].some((value) => value?.toLowerCase().includes(term)),
+          )
+          .slice(0, 12)
+          .map((p) => ({
+            name: p.name,
+            sku: p.sku,
+            barcode: p.barcode,
+            quantity: Number(p.quantity),
+            min_stock: Number(p.min_stock),
+            status:
+              Number(p.quantity) <= 0
+                ? "out_of_stock"
+                : Number(p.quantity) <= Number(p.min_stock)
+                  ? "low_stock"
+                  : "in_stock",
+            selling_price: Number(p.selling_price),
+            cost_price: Number(p.cost_price),
+            updated_at: p.updated_at,
+            archived: p.archived,
+          }));
       },
     }),
     listLowStock: tool({
@@ -124,19 +128,20 @@ function buildShopTools(token: string) {
           .from("products")
           .select("name,quantity,min_stock,selling_price,cost_price,updated_at")
           .eq("archived", false)
-          .lte("quantity", "min_stock")
           .order("quantity")
           .limit(50);
         if (error) throw new Error(error.message);
-        return (data ?? []).map((p) => ({
-          name: p.name,
-          quantity: Number(p.quantity),
-          min_stock: Number(p.min_stock),
-          status: Number(p.quantity) <= 0 ? "out_of_stock" : "low_stock",
-          selling_price: Number(p.selling_price),
-          cost_price: Number(p.cost_price),
-          updated_at: p.updated_at,
-        }));
+        return (data ?? [])
+          .filter((p) => Number(p.quantity) <= Number(p.min_stock))
+          .map((p) => ({
+            name: p.name,
+            quantity: Number(p.quantity),
+            min_stock: Number(p.min_stock),
+            status: Number(p.quantity) <= 0 ? "out_of_stock" : "low_stock",
+            selling_price: Number(p.selling_price),
+            cost_price: Number(p.cost_price),
+            updated_at: p.updated_at,
+          }));
       },
     }),
     salesSummary: tool({
@@ -240,7 +245,7 @@ function buildShopTools(token: string) {
           })
           .filter((p) => p.priority !== "low")
           .sort((a, b) => {
-            const rank = { urgent: 0, high: 1, medium: 2, low: 3 } as const;
+            const rank: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
             return rank[a.priority] - rank[b.priority] || b.weekly_sold - a.weekly_sold;
           })
           .slice(0, 20);
