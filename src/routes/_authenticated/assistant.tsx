@@ -84,8 +84,8 @@ function Assistant() {
                   <AlertTriangle className="h-4 w-4" /> Stock watch is active
                 </div>
                 <p className="mt-1 text-muted-foreground">
-                  Ask about any item and I will check current stock, low-stock status, sales,
-                  and reorder advice from your shop data.
+                  Ask about any item and I will check current stock, low-stock status, sales, and
+                  reorder advice from your shop data.
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">Try one of these:</p>
@@ -104,9 +104,7 @@ function Assistant() {
           )}
 
           {messages.map((m) => {
-            const text = m.parts
-              .map((p) => (p.type === "text" ? p.text : ""))
-              .join("");
+            const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
             return (
               <div
                 key={m.id}
@@ -114,9 +112,7 @@ function Assistant() {
               >
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
-                    m.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                    m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
                   }`}
                 >
                   {m.role === "assistant" ? (
