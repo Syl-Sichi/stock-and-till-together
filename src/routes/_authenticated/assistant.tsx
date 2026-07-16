@@ -2,11 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useRef, useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Send } from "lucide-react";
+import { AlertTriangle, Bot, Send, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/assistant")({
   component: Assistant,
@@ -14,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/assistant")({
 
 const SUGGESTIONS = [
   "What items are running low on stock?",
+  "How many Akara are left?",
   "How much revenue did I make today?",
   "Which products sold the most this week?",
   "What should I reorder?",
@@ -35,6 +38,11 @@ function Assistant() {
         return fetch(url, { ...init, headers });
       },
     }),
+    onError: (error) => {
+      toast.error("The AI assistant could not respond", {
+        description: error.message,
+      });
+    },
   });
 
   const busy = status === "submitted" || status === "streaming";
@@ -70,7 +78,16 @@ function Assistant() {
 
         <div ref={scrollRef} className="flex-1 overflow-auto p-4 space-y-4">
           {messages.length === 0 && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
+                <div className="flex items-center gap-2 font-medium text-destructive">
+                  <AlertTriangle className="h-4 w-4" /> Stock watch is active
+                </div>
+                <p className="mt-1 text-muted-foreground">
+                  Ask about any item and I will check current stock, low-stock status, sales,
+                  and reorder advice from your shop data.
+                </p>
+              </div>
               <p className="text-sm text-muted-foreground">Try one of these:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {SUGGESTIONS.map((s) => (
@@ -102,7 +119,16 @@ function Assistant() {
                       : "bg-muted"
                   }`}
                 >
-                  {text || (m.role === "assistant" && busy ? "…" : "")}
+                  {m.role === "assistant" ? (
+                    <div className="flex gap-2">
+                      <Bot className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+                      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                        <ReactMarkdown>{text || (busy ? "…" : "")}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ) : (
+                    text
+                  )}
                 </div>
               </div>
             );
