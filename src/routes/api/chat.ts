@@ -21,7 +21,10 @@ async function fetchInventoryContext(token: string) {
       .select("name,quantity,min_stock,selling_price,cost_price,archived")
       .eq("archived", false)
       .order("quantity"),
-    supabase.from("sales").select("total,payment_method").gte("created_at", startOfDay.toISOString()),
+    supabase
+      .from("sales")
+      .select("total,payment_method")
+      .gte("created_at", startOfDay.toISOString()),
     supabase
       .from("sale_items")
       .select("name_snapshot,qty,unit_price,cost_snapshot")
@@ -91,7 +94,9 @@ function buildShopTools(token: string) {
       execute: async ({ search }) => {
         const { data, error } = await supabase
           .from("products")
-          .select("id,name,sku,barcode,quantity,min_stock,selling_price,cost_price,updated_at,archived")
+          .select(
+            "id,name,sku,barcode,quantity,min_stock,selling_price,cost_price,updated_at,archived",
+          )
           .order("quantity")
           .limit(200);
         if (error) throw new Error(error.message);
@@ -148,7 +153,9 @@ function buildShopTools(token: string) {
       description:
         "Summarize revenue, profit, transaction count, and best-selling products for today or the last 7 days.",
       inputSchema: z.object({
-        period: z.enum(["today", "week"]).describe("Use today for daily questions, week for weekly trends"),
+        period: z
+          .enum(["today", "week"])
+          .describe("Use today for daily questions, week for weekly trends"),
       }),
       execute: async ({ period }) => {
         const start = period === "week" ? startOfDay(6) : startOfDay(0);
@@ -223,7 +230,10 @@ function buildShopTools(token: string) {
             const quantity = Number(p.quantity);
             const minStock = Number(p.min_stock);
             const daysLeft = dailyRate > 0 ? quantity / dailyRate : null;
-            const suggestedQty = Math.max(0, Math.ceil(Math.max(minStock * 2, weeklySold) - quantity));
+            const suggestedQty = Math.max(
+              0,
+              Math.ceil(Math.max(minStock * 2, weeklySold) - quantity),
+            );
             return {
               name: p.name,
               quantity,
