@@ -1,4 +1,4 @@
-# My Spot POS
+# My Supermarket — Farms and Stores
 
 AI-Powered Inventory Management & Point of Sale system for supermarkets.
 
@@ -11,6 +11,11 @@ Modern, professional inventory and POS web application (Progressive Web App) tha
 - Installable on Android, iOS, Windows, and macOS
 - Real-time sync via Supabase when connectivity is available
 - Role-based access control (Owner, Manager, Cashier)
+
+## Branding
+
+**My Supermarket Farms and Stores**  
+Primary color: Red (logo red `#DC2626`)
 
 ## Tech Stack
 
@@ -32,27 +37,10 @@ npm run dev
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values:
-
-- Supabase URL and anon/public key
-- Optional: `OPENAI_API_KEY` (or compatible provider) for online AI
-- Optional: VAPID keys for push notifications
+Copy `.env.example` to `.env` and fill in the values.
 
 **Never commit the real `.env` file.**
 
 ## Offline & Online Behaviour
 
-The application is built offline-first:
-
-- POS sales, inventory views, and core operations work without internet
-- Changes are queued locally and automatically synced when the device comes back online
-- The AI assistant answers from local IndexedDB data when offline and uses cloud models when online
-
-## Branding
-
-Logo and visual assets will be updated once provided by the client.  
-Current placeholder branding is **My Spot**.
-
-## License
-
-Private / client project.
+The application is built offline-first. Core POS and inventory operations work without internet and sync automatically when connectivity returns. The AI assistant falls back to local data when offline.

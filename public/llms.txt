@@ -1,8 +1,4 @@
-# My Spot
+# My Supermarket Farms and Stores
 
-> AI-powered inventory management and point of sale system for retail businesses.
-
-My Spot helps shop owners manage products, process sales at the counter, monitor stock in real time, and get AI-generated insights on restocking and best-sellers.
-
-## Pages
-- [Sign in](/auth): Sign in or create a My Spot account.
+AI-Powered Inventory Management & Point of Sale system.
+Works online and fully offline.
