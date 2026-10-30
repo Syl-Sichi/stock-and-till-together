@@ -1,9 +1,9 @@
 {
-  "name": "my-spot-pos",
+  "name": "my-supermarket-pos",
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "AI-Powered Inventory Management & Point of Sale system for supermarkets. Works online and fully offline.",
+  "description": "My Supermarket Farms and Stores — AI-Powered Inventory Management & Point of Sale. Works online and fully offline.",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
