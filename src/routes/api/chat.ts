@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createAiProvider } from "@/lib/ai-gateway.server";
 import { z } from "zod";
 
 async function fetchInventoryContext(token: string) {
@@ -272,8 +272,8 @@ export const Route = createFileRoute("/api/chat")({
         const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
         if (!token) return new Response("Unauthorized", { status: 401 });
 
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        const provider = createAiProvider();
+        const model = provider("gpt-4o-mini");
 
         const { messages } = (await request.json()) as { messages: UIMessage[] };
 
@@ -283,9 +283,6 @@ export const Route = createFileRoute("/api/chat")({
         } catch (e) {
           console.error("ctx error", e);
         }
-
-        const gateway = createLovableAiGatewayProvider(key);
-        const model = gateway("google/gemini-3-flash-preview");
 
         const system = `You are the My Spot assistant — an AI helper for a small retail shop that uses the My Spot inventory & POS system. Currency is Nigerian Naira (₦).
 Use your shop-data tools before answering questions about stock, low-stock alerts, sales, revenue, profit, best sellers, and what to reorder. Be direct and practical.

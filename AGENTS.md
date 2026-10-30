@@ -1,10 +1,8 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+# Agent / Development Notes
+
+This is a production-ready POS + Inventory system.
+
+- Keep offline-first patterns intact.
+- AI must have an offline fallback that queries local IndexedDB snapshots.
+- Do not reintroduce any platform-specific scaffolding.
+- Prefer clean, modular code.

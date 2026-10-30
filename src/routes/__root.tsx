@@ -10,7 +10,6 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 
@@ -41,7 +40,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
   const router = useRouter();
   const err = error instanceof Error ? error : new Error(String(error));
   useEffect(() => {
-    reportLovableError(err, { boundary: "tanstack_root_error_component" });
+    console.error("[ErrorBoundary]", err);
   }, [err]);
 
   return (
