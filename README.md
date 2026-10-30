@@ -4,13 +4,13 @@ AI-Powered Inventory Management & Point of Sale system for supermarkets.
 
 ## Overview
 
-Modern, professional inventory and POS web application (PWA) that works online and offline.
+Modern, professional inventory and POS web application (Progressive Web App) that works both **online and fully offline**.
 
-- Full offline support for sales, inventory, and core operations with automatic sync.
-- AI assistant that works offline using local data and online with cloud models.
-- Installable on Android, iOS, Windows, and macOS.
-- Real-time sync via Supabase when online.
-- Role-based access (Owner, Manager, Cashier).
+- Full offline support for sales, inventory, and core operations with automatic background sync
+- AI assistant that works offline (queries local data) and online (cloud models)
+- Installable on Android, iOS, Windows, and macOS
+- Real-time sync via Supabase when connectivity is available
+- Role-based access control (Owner, Manager, Cashier)
 
 ## Tech Stack
 
@@ -20,24 +20,39 @@ Modern, professional inventory and POS web application (PWA) that works online a
 - Tailwind CSS + shadcn/ui
 - PWA with service worker
 - IndexedDB for offline data
-- Vercel AI SDK for online AI
+- Vercel AI SDK for online AI features
 
 ## Getting Started
 
 ```bash
 npm install
-cp .env.example .env   # fill in your Supabase keys
+cp .env.example .env   # fill in your Supabase + AI keys
 npm run dev
 ```
 
 ## Environment Variables
 
-See `.env` for required Supabase and VAPID keys. For AI, set `OPENAI_API_KEY` or compatible provider.
+Copy `.env.example` to `.env` and fill in the values:
 
-## Offline & Online
+- Supabase URL and anon/public key
+- Optional: `OPENAI_API_KEY` (or compatible provider) for online AI
+- Optional: VAPID keys for push notifications
 
-The app is a Progressive Web App. Core POS and inventory operations work fully offline and sync when connectivity returns. The AI assistant falls back to local data queries when offline.
+**Never commit the real `.env` file.**
+
+## Offline & Online Behaviour
+
+The application is built offline-first:
+
+- POS sales, inventory views, and core operations work without internet
+- Changes are queued locally and automatically synced when the device comes back online
+- The AI assistant answers from local IndexedDB data when offline and uses cloud models when online
 
 ## Branding
 
-Logo and assets will be updated once provided. Current branding is "My Spot".
+Logo and visual assets will be updated once provided by the client.  
+Current placeholder branding is **My Spot**.
+
+## License
+
+Private / client project.

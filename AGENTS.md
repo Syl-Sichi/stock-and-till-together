@@ -1,8 +1,8 @@
-# Agent / Development Notes
+# Development Notes
 
-This is a production-ready POS + Inventory system.
+This is a production-ready POS + Inventory system (My Spot POS).
 
 - Keep offline-first patterns intact.
 - AI must have an offline fallback that queries local IndexedDB snapshots.
-- Do not reintroduce any platform-specific scaffolding.
 - Prefer clean, modular code.
+- Branding and logo assets live in `/public`.
