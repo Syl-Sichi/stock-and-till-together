@@ -58,6 +58,7 @@ function POS() {
     offline: boolean;
     lines: StockNoticeLine[];
   } | null>(null);
+  const [sessionStock, setSessionStock] = useState<StockNoticeLine[]>([]);
   const scanRef = useRef<HTMLInputElement>(null);
 
   const products = useQuery({
@@ -219,6 +220,17 @@ function POS() {
     },
     onSuccess: async (res) => {
       setLastSaleNotice({ offline: res.offline, lines: res.stock });
+      setSessionStock((prev) => {
+        const byId = new Map(prev.map((l) => [l.product_id, { ...l, sold: 0 }]));
+        for (const line of res.stock) {
+          const existing = byId.get(line.product_id);
+          byId.set(line.product_id, {
+            ...line,
+            sold: (existing?.sold ?? 0) + line.sold,
+          });
+        }
+        return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+      });
       const soldSummary = res.stock
         .map((line) => `${line.name}: ${line.sold} sold, ${line.remaining} left`)
         .join("\n");
