@@ -576,3 +576,64 @@ function Row({ label, value, big }: { label: string; value: string; big?: boolea
     </div>
   );
 }
+
+function StockStatusPanel({
+  lines,
+  onClear,
+}: {
+  lines: StockNoticeLine[];
+  onClear: () => void;
+}) {
+  const hasAlert = lines.some((line) => line.level !== "normal");
+  return (
+    <Card
+      role="status"
+      aria-live="polite"
+      className={`p-4 border ${hasAlert ? "border-destructive/40 bg-destructive/10" : "border-primary/20 bg-primary/5"}`}
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <h3 className="font-semibold text-sm">Stock status — this session</h3>
+        </div>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onClear}>
+          <Trash2 className="h-3 w-3 mr-1" />
+          Clear
+        </Button>
+      </div>
+      <div className="space-y-1.5 text-sm">
+        {lines.map((line) => (
+          <div
+            key={line.product_id}
+            className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-lg border bg-background/60 px-3 py-2"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-medium truncate">{line.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {line.sold} sold
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  line.level === "out"
+                    ? "bg-destructive/15 text-destructive font-semibold"
+                    : line.level === "low"
+                      ? "bg-destructive/15 text-destructive font-semibold"
+                      : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {line.remaining} left
+              </span>
+              {line.level !== "normal" && (
+                <span className="text-xs font-semibold text-destructive">
+                  {line.level === "out" ? "Finished — restock now" : "Low — restock now"}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
