@@ -347,6 +347,10 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div class="row"><sp
           </form>
         </Card>
 
+        {sessionStock.length > 0 && (
+          <StockStatusPanel lines={sessionStock} onClear={() => setSessionStock([])} />
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {filtered.map((p) => (
             <button
