@@ -3,6 +3,9 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "description": "My Supermarket Farms and Stores — AI-Powered Inventory Management & Point of Sale. Works online and fully offline.",
   "scripts": {
     "dev": "vite dev",
@@ -60,7 +63,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.525.0",
-    "nitro": "^0.0.0",
+    "nitro": "^3.0.261103-rc",
     "papaparse": "^5.5.3",
     "react": "^19.1.0",
     "react-day-picker": "^9.8.0",
