@@ -119,9 +119,21 @@ function Assistant() {
         return fetch(url, { ...init, headers });
       },
     }),
-    onError: (error) => {
-      toast.error("The AI assistant could not respond", {
-        description: error.message,
+    onError: async (error) => {
+      // Online AI failed (no key, network, or server error). Fall back to local answers.
+      const lastUser = messages.findLast?.((m) => m.role === "user")?.parts
+        ?.map((p: any) => (p.type === "text" ? p.text : ""))
+        .join("") || input;
+      const question = lastUser || "stock levels";
+      const answer = await answerLocally(question);
+      setOfflineMessages((m) => [
+        ...m,
+        { role: "user", text: question },
+        { role: "assistant", text: answer },
+      ]);
+      setOnline(false);
+      toast.error("Online AI unavailable", {
+        description: "Switched to offline mode using data on this device.",
       });
     },
   });
