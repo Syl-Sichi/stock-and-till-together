@@ -322,27 +322,27 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div class="row"><sp
       <div className="lg:col-span-3 space-y-4">
         {lastSaleNotice && <StockNotice notice={lastSaleNotice} />}
 
-        <Card className="p-4">
+        <Card className="p-4 border-0 shadow-sm bg-gradient-to-br from-card to-secondary/30">
           <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="text-xs text-muted-foreground">
-              Scan or search a product to add it to the sale.
+            <div className="text-xs font-medium text-muted-foreground">
+              Scan barcode or search to add items
             </div>
             <PendingSalesButton />
           </div>
           <form onSubmit={scanSubmit} className="flex gap-2">
             <div className="relative flex-1">
-              <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <ScanBarcode className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
               <Input
                 ref={scanRef}
                 autoFocus
-                className="pl-9"
-                placeholder="Scan barcode or search product…"
+                className="pl-10 h-11 rounded-xl border-border/80 bg-background"
+                placeholder="Scan or type product name / barcode"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            <Button type="submit" variant="outline">
-              Enter
+            <Button type="submit" className="h-11 rounded-xl px-5">
+              Add
             </Button>
           </form>
         </Card>
@@ -356,28 +356,34 @@ ${payment === "cash" && typeof cashReceived === "number" ? `<div class="row"><sp
             <button
               key={p.id}
               onClick={() => add(p)}
-              className="text-left rounded-xl border bg-card p-4 hover:border-primary hover:shadow-sm transition"
+              className="text-left rounded-2xl border bg-card p-4 hover:border-primary hover:shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
               disabled={p.quantity <= 0}
             >
-              <div className="font-medium text-sm line-clamp-2">{p.name}</div>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-primary font-semibold text-sm">
+              <div className="font-medium text-sm line-clamp-2 leading-snug">{p.name}</div>
+              <div className="mt-3 flex items-end justify-between">
+                <span className="text-primary font-bold text-base">
                   {formatNaira(p.selling_price)}
                 </span>
                 <span
-                  className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    p.quantity <= 0 ? "bg-destructive/15 text-destructive" : "bg-muted"
+                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                    p.quantity <= 0
+                      ? "bg-destructive/10 text-destructive"
+                      : p.quantity <= p.min_stock
+                      ? "bg-warning/15 text-warning-foreground"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {p.quantity}
+                  {p.quantity <= 0 ? "Out" : p.quantity}
                 </span>
               </div>
             </button>
           ))}
           {filtered.length === 0 && (
-            <div className="col-span-full text-center text-sm text-muted-foreground py-8">
+            <div className="col-span-full text-center text-sm text-muted-foreground py-12">
               No matching products.
             </div>
+          )}
+        </div>
           )}
         </div>
       </div>

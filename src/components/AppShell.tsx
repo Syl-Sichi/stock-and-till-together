@@ -68,11 +68,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
         }`}
       >
         <div className="h-16 flex items-center justify-between px-5 border-b border-sidebar-border">
-          <Link to="/dashboard" className="flex items-center gap-2 font-display font-bold text-lg text-sidebar-foreground">
-            <span className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center">
-              <ShoppingBasket className="h-4 w-4" />
+          <Link to="/dashboard" className="flex items-center gap-2.5 font-display font-semibold text-base text-sidebar-foreground">
+            <span className="h-9 w-9 rounded-xl bg-primary text-primary-foreground grid place-items-center shadow-sm">
+              <ShoppingBasket className="h-4.5 w-4.5" />
             </span>
-            My Supermarket
+            <div className="leading-tight">
+              <div>My Supermarket</div>
+              <div className="text-[10px] font-normal text-sidebar-foreground/50">Retail System</div>
+            </div>
           </Link>
           <button className="lg:hidden text-sidebar-foreground" onClick={() => setOpen(false)}>
             <X className="h-5 w-5" />
@@ -88,10 +91,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                   active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                 }`}
               >
                 <Icon className="h-4 w-4" />
