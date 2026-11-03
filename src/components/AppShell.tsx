@@ -16,6 +16,7 @@ import {
   X,
   PackagePlus,
   CloudOff,
+  ClipboardCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const nav = [
   { to: "/restock", label: "Restock", icon: PackagePlus },
   { to: "/sales", label: "Sales", icon: Receipt },
   { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/end-of-day", label: "End of Day", icon: ClipboardCheck },
   { to: "/suppliers", label: "Suppliers", icon: Users2 },
   { to: "/assistant", label: "AI Assistant", icon: Sparkles },
   { to: "/offline-activity", label: "Offline Activity", icon: CloudOff },

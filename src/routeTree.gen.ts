@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedOfflineActivityRouteImport } from './routes/_authenticated/offline-activity'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
+import { Route as AuthenticatedEndOfDayRouteImport } from './routes/_authenticated/end-of-day'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedRestockRouteImport } from './routes/_authenticated/restock'
 import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/sales'
@@ -75,6 +76,11 @@ const AuthenticatedPosRoute = AuthenticatedPosRouteImport.update({
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEndOfDayRoute = AuthenticatedEndOfDayRouteImport.update({
+  id: '/end-of-day',
+  path: '/end-of-day',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRestockRoute = AuthenticatedRestockRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/offline-activity'
     | '/pos'
+    | '/end-of-day'
     | '/reports'
     | '/restock'
     | '/sales'
@@ -199,6 +206,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/offline-activity'
     | '/pos'
+    | '/end-of-day'
     | '/reports'
     | '/restock'
     | '/sales'
@@ -218,6 +226,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inventory'
     | '/_authenticated/offline-activity'
     | '/_authenticated/pos'
+    | '/_authenticated/end-of-day'
     | '/_authenticated/reports'
     | '/_authenticated/restock'
     | '/_authenticated/sales'
@@ -368,6 +377,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedOfflineActivityRoute: typeof AuthenticatedOfflineActivityRoute
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
+  AuthenticatedEndOfDayRoute: typeof AuthenticatedEndOfDayRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedRestockRoute: typeof AuthenticatedRestockRoute
   AuthenticatedSalesRoute: typeof AuthenticatedSalesRoute
@@ -381,6 +391,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedOfflineActivityRoute: AuthenticatedOfflineActivityRoute,
   AuthenticatedPosRoute: AuthenticatedPosRoute,
+  AuthenticatedEndOfDayRoute: AuthenticatedEndOfDayRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedRestockRoute: AuthenticatedRestockRoute,
   AuthenticatedSalesRoute: AuthenticatedSalesRoute,
