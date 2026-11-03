@@ -28,7 +28,23 @@ function Restock() {
   const [productId, setProductId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [qty, setQty] = useState(1);
-  const [unitCost, setUnitCost] = useState(0);
+  const [newSellingPrice, setNewSellingPrice] = useState<number | "">("");
+
+  // Last purchase cost for selected product (price checker)
+  const lastCost = useQuery({
+    queryKey: ["last-cost", productId],
+    enabled: !!productId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("restocks")
+        .select("unit_cost, created_at")
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
 
   const products = useQuery({
     queryKey: ["products-min"],
@@ -61,11 +77,21 @@ function Restock() {
         created_by: userData.user?.id,
       });
       if (error) throw error;
+
+      // Optionally update selling price
+      if (newSellingPrice !== "" && Number(newSellingPrice) > 0) {
+        const { error: priceError } = await supabase
+          .from("products")
+          .update({ selling_price: Number(newSellingPrice), updated_at: new Date().toISOString() })
+          .eq("id", productId);
+        if (priceError) throw priceError;
+      }
     },
     onSuccess: () => {
       toast.success("Stock updated");
       setQty(1);
       setUnitCost(0);
+      setNewSellingPrice("");
       setProductId("");
       setSupplierId("");
       qc.invalidateQueries({ queryKey: ["restocks"] });
@@ -113,8 +139,28 @@ function Restock() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Quantity</Label><Input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} /></div>
-              <div><Label>Unit cost</Label><Input type="number" step="0.01" value={unitCost} onChange={(e) => setUnitCost(Number(e.target.value))} /></div>
+              <div><Label>Unit cost (₦)</Label><Input type="number" step="0.01" value={unitCost} onChange={(e) => setUnitCost(Number(e.target.value))} /></div>
             </div>
+
+            {productId && lastCost.data && (
+              <div className={`text-xs p-2 rounded ${Number(unitCost) > Number(lastCost.data.unit_cost) ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" : "bg-muted"}`}>
+                Last purchase cost: {formatNaira(Number(lastCost.data.unit_cost))} 
+                {Number(unitCost) > Number(lastCost.data.unit_cost) && " — price increased"}
+              </div>
+            )}
+
+            <div>
+              <Label>New selling price (optional)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="Leave blank to keep current"
+                value={newSellingPrice}
+                onChange={(e) => setNewSellingPrice(e.target.value === "" ? "" : Number(e.target.value))}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Raise the selling price here after purchase if needed.</p>
+            </div>
+
             <Button type="submit" className="w-full" disabled={!productId || qty < 1 || add.isPending}>
               {add.isPending ? "Saving…" : "Add to stock"}
             </Button>

@@ -26,15 +26,27 @@ export const Route = createFileRoute("/_authenticated/reports")({
   component: Reports,
 });
 
-type Period = "day" | "week" | "month";
+type Period = "day" | "week" | "month" | "quarter" | "year";
 
 function rangeFor(period: Period): { since: Date; until: Date } {
   const until = new Date();
   const since = new Date();
-  if (period === "day") since.setHours(0, 0, 0, 0);
-  else if (period === "week") since.setDate(since.getDate() - 6);
-  else since.setDate(since.getDate() - 29);
-  since.setHours(0, 0, 0, 0);
+  if (period === "day") {
+    since.setHours(0, 0, 0, 0);
+  } else if (period === "week") {
+    since.setDate(since.getDate() - 6);
+    since.setHours(0, 0, 0, 0);
+  } else if (period === "month") {
+    since.setDate(since.getDate() - 29);
+    since.setHours(0, 0, 0, 0);
+  } else if (period === "quarter") {
+    since.setMonth(since.getMonth() - 3);
+    since.setHours(0, 0, 0, 0);
+  } else {
+    // year
+    since.setFullYear(since.getFullYear() - 1);
+    since.setHours(0, 0, 0, 0);
+  }
   return { since, until };
 }
 
@@ -89,7 +101,11 @@ function Reports() {
 
       // Daily breakdown
       const dailyMap = new Map<string, { revenue: number; profit: number; tx: number }>();
-      const days = period === "day" ? 1 : period === "week" ? 7 : 30;
+      const days =
+        period === "day" ? 1 :
+        period === "week" ? 7 :
+        period === "month" ? 30 :
+        period === "quarter" ? 90 : 365;
       for (let i = 0; i < days; i++) {
         const d = new Date();
         d.setDate(d.getDate() - i);
@@ -178,6 +194,8 @@ function Reports() {
             <TabsTrigger value="day">Today</TabsTrigger>
             <TabsTrigger value="week">Weekly</TabsTrigger>
             <TabsTrigger value="month">Monthly</TabsTrigger>
+            <TabsTrigger value="quarter">Quarterly</TabsTrigger>
+            <TabsTrigger value="year">Annual</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex gap-2">
