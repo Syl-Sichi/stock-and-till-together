@@ -28,17 +28,17 @@ import { ConflictBanner } from "@/components/ConflictDialog";
 import { startSyncLoop } from "@/lib/offline/sync";
 
 const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/pos", label: "Point of Sale", icon: ScanBarcode },
-  { to: "/inventory", label: "Inventory", icon: Package },
-  { to: "/restock", label: "Restock", icon: PackagePlus },
-  { to: "/sales", label: "Sales", icon: Receipt },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
-  { to: "/end-of-day", label: "End of Day", icon: ClipboardCheck },
-  { to: "/suppliers", label: "Suppliers", icon: Users2 },
-  { to: "/assistant", label: "AI Assistant", icon: Sparkles },
-  { to: "/offline-activity", label: "Offline Activity", icon: CloudOff },
-  { to: "/settings", label: "Settings", icon: SettingsIcon },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["owner", "manager"] },
+  { to: "/pos", label: "Point of Sale", icon: ScanBarcode, roles: ["owner", "manager", "cashier"] },
+  { to: "/inventory", label: "Inventory", icon: Package, roles: ["owner", "manager", "cashier"] },
+  { to: "/restock", label: "Restock", icon: PackagePlus, roles: ["owner", "manager"] },
+  { to: "/sales", label: "Sales", icon: Receipt, roles: ["owner", "manager", "cashier"] },
+  { to: "/reports", label: "Reports", icon: BarChart3, roles: ["owner", "manager"] },
+  { to: "/end-of-day", label: "End of Day", icon: ClipboardCheck, roles: ["owner", "manager"] },
+  { to: "/suppliers", label: "Suppliers", icon: Users2, roles: ["owner", "manager"] },
+  { to: "/assistant", label: "AI Assistant", icon: Sparkles, roles: ["owner", "manager", "cashier"] },
+  { to: "/offline-activity", label: "Offline Activity", icon: CloudOff, roles: ["owner", "manager"] },
+  { to: "/settings", label: "Settings", icon: SettingsIcon, roles: ["owner"] },
 ] as const;
 
 export default function AppShell({ children }: { children: ReactNode }) {
@@ -78,7 +78,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {nav.map((item) => {
+          {nav
+            .filter((item) => !role || item.roles.includes(role as any))
+            .map((item) => {
             const Icon = item.icon;
             const active = location.pathname.startsWith(item.to);
             return (
