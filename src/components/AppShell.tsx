@@ -39,6 +39,7 @@ const nav = [
   { to: "/assistant", label: "AI Assistant", icon: Sparkles, roles: ["owner", "manager", "cashier"] },
   { to: "/offline-activity", label: "Offline Activity", icon: CloudOff, roles: ["owner", "manager"] },
   { to: "/settings", label: "Settings", icon: SettingsIcon, roles: ["owner"] },
+  { to: "/staff", label: "Staff", icon: Users2, roles: ["owner"] },
 ] as const;
 
 export default function AppShell({ children }: { children: ReactNode }) {
