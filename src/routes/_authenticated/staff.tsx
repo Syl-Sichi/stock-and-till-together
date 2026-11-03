@@ -88,7 +88,8 @@ function StaffPage() {
           Staff
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Assign roles to people who have signed up. Cashiers get limited access.
+          You are the developer. Create the real owner's account, then set them as Owner here.
+          You can keep yourself as Owner too, or change your role later.
         </p>
       </div>
 
@@ -97,9 +98,10 @@ function StaffPage() {
           <CardTitle className="text-base">How to add a staff member</CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-2 text-muted-foreground">
-          <p>1. Share the app link with the person.</p>
-          <p>2. They sign up with their own email and password.</p>
-          <p>3. Come back here and set their role to <strong>Cashier</strong> or <strong>Manager</strong>.</p>
+          <p>1. Share the app link with the real owner (or create their account yourself).</p>
+          <p>2. They sign up with their email and password.</p>
+          <p>3. Come back here and set their role to <strong>Owner</strong>.</p>
+          <p>4. Optionally change your own role if you no longer need owner access.</p>
         </CardContent>
       </Card>
 
@@ -140,6 +142,7 @@ function StaffPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="owner">Owner</SelectItem>
                           <SelectItem value="manager">Manager</SelectItem>
                           <SelectItem value="cashier">Cashier</SelectItem>
                         </SelectContent>
